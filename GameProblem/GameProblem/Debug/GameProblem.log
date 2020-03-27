@@ -1,0 +1,5 @@
+﻿  GameProblem.cpp
+d:\test\gameproblem\gameproblem\gameproblem.cpp(22): warning C4018: “<”: 有符号/无符号不匹配
+d:\test\gameproblem\gameproblem\gameproblem.cpp(29): warning C4018: “<=”: 有符号/无符号不匹配
+d:\test\gameproblem\gameproblem\gameproblem.cpp(30): warning C4018: “<=”: 有符号/无符号不匹配
+  GameProblem.vcxproj -> D:\test\GameProblem\Debug\GameProblem.exe

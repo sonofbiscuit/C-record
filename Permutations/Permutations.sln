@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1062
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Permutations", "Permutations\Permutations.vcxproj", "{B78CB507-6151-41D3-9391-259853251A88}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B78CB507-6151-41D3-9391-259853251A88}.Debug|x64.ActiveCfg = Debug|x64
+		{B78CB507-6151-41D3-9391-259853251A88}.Debug|x64.Build.0 = Debug|x64
+		{B78CB507-6151-41D3-9391-259853251A88}.Debug|x86.ActiveCfg = Debug|Win32
+		{B78CB507-6151-41D3-9391-259853251A88}.Debug|x86.Build.0 = Debug|Win32
+		{B78CB507-6151-41D3-9391-259853251A88}.Release|x64.ActiveCfg = Release|x64
+		{B78CB507-6151-41D3-9391-259853251A88}.Release|x64.Build.0 = Release|x64
+		{B78CB507-6151-41D3-9391-259853251A88}.Release|x86.ActiveCfg = Release|Win32
+		{B78CB507-6151-41D3-9391-259853251A88}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F4025815-9BC4-4F64-880C-476E3C3BACC5}
+	EndGlobalSection
+EndGlobal
