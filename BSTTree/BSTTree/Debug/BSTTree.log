@@ -1,0 +1,3 @@
+﻿  BSTTree.cpp
+d:\test\bsttree\bsttree\bsttree.cpp(172): warning C4715: “BST::search”: 不是所有的控件路径都返回值
+  BSTTree.vcxproj -> D:\test\BSTTree\Debug\BSTTree.exe
