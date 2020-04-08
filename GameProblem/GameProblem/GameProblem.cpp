@@ -13,6 +13,7 @@ int main() {
 }
 
 //对于pair类，由于它只有两个元素，分别名为first和second，因此直接使用普通的点操作符即可访问其成员
+//first和second表示先拿和后拿所能得到的比分
 bool Solution::stoneGame(vector<int>& piles) {
 	int left = 0, right = 0;
 	size_t n = piles.size();
