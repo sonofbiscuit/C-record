@@ -77,3 +77,69 @@ int main(){
 	string tem=strtool::replace("12123a13a1312", "a", "b");
 	cout<<tem<<endl;
 }
+
+
+/*
+map<string, string> getMap() {
+	map<string, string> mp;
+	mp.insert(pair<string, string>("&quot;", "\""));
+	mp.insert(pair<string, string>("&apos;", "'"));
+	mp.insert(pair<string, string>("&amp;", "&"));
+	mp.insert(pair<string, string>("&gt;", ">"));
+	mp.insert(pair<string, string>("&lt;", "<"));
+	mp.insert(pair<string, string>("&frasl;", "/"));
+	return mp;
+}
+
+string entityParser(string text) {
+	map<string, string> ans = getMap();
+	string str;
+	string key;//当作key进行查找
+	for (auto tp : text) {
+		if (tp == '&') {//头
+			if (!key.empty()) {//key中存储的有不需要的字符
+				str += key;
+				key.clear();
+			}
+			key.push_back(tp);
+		}
+		else if (tp != ';') {//不是尾
+			key.push_back(tp);
+		}
+		else {//为;时，即为尾
+			key.push_back(tp);
+			if (ans.find(key) != ans.end()) {//找到与key值相匹配的value了
+				str += ans[key];
+				key.clear();
+			}
+			else {//没有匹配的值，说明无需替换
+				str += key;
+				key.clear();
+			}
+		}
+	}
+	if (!key.empty()) {
+		str += key;
+	}
+	cout << "修改后: ";
+	for (auto a : str) {
+		cout << a;
+	}
+	return str;
+}
+
+
+int main() {
+
+	string text = "and I quote: &quot;...&quot;";
+	cout << "初始字符串: ";
+	for (auto ini : text) {
+		cout << ini;
+	}
+	cout << endl;
+	entityParser(text);
+}
+
+
+
+*/
