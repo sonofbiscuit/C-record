@@ -28,4 +28,6 @@ hanoi为汉诺塔问题<br>
 SlidingWindow是求字符串中最长不重复子串（滑动窗口）<br>
 StlStringChange为实现字符串的部分操作，trim、split、replace<br>
 lifeGame为生命游戏<br>
+Dynamic为石头游戏3<br>
+MatrixSearch为矩阵搜索(BFS,DP等)<br>
 
