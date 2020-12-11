@@ -30,19 +30,19 @@ public:
     int counts=0;
     int lengthOfLongestSubstring(string s) {
         for(int j=0;j<=s.length();j++){
-        for(int i=0;i<=j;i++){
-            string temp=s.substr(i,j-i);
-            sort(temp.begin(),temp.end());//先排序
-            string::iterator iterEnd=unique(temp.begin(),temp.end());//再unique
-            temp.erase(iterEnd,temp.end());
-            if(temp.length()!=s.substr(i,j-i).length()){
-                continue;
-            }else{
-                if(temp.length()>=counts)
+        	for(int i=0;i<=j;i++){
+            	string temp=s.substr(i,j-i);
+            	sort(temp.begin(),temp.end());//先排序
+            	string::iterator iterEnd=unique(temp.begin(),temp.end());//再unique
+            	temp.erase(iterEnd,temp.end());
+            	if(temp.length()!=s.substr(i,j-i).length()){
+                	continue;
+           		}else{
+                	if(temp.length()>=counts)
                     counts=temp.length();
-            }
-        }
-    }
+            	}
+        	}
+    	}
         return counts;
     }
 };
