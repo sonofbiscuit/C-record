@@ -3,7 +3,9 @@
 #include<cstddef>
 #include<algorithm>
 #include<iostream>
+
 using namespace std;
+
 
 namespace strtool{//命名空间strtool,防止冲突
 string trim(const string& str){
@@ -19,7 +21,7 @@ string trim(const string& str){
 }
 
 
-int split(const string& str, vector<string>& ret_, string spl){//分割一个字符,如13221,123,213
+int split(const string& str, vector<string>& ret_, string spl){//分割一个字符, 如13221,123,213
 	if(str.empty()){
 		return 0;
 	}
@@ -64,7 +66,7 @@ string replace(const string& str, const string& old_, const string& new_){
 }
 
 }//#namespace strtool
-
+/*
 int main(){
 	cout<<strtool::trim(" adadq ")<<endl;
 	cout<<"----------------"<<endl;
@@ -77,7 +79,7 @@ int main(){
 	string tem=strtool::replace("12123a13a1312", "a", "b");
 	cout<<tem<<endl;
 }
-
+*/
 
 /*
 map<string, string> getMap() {
@@ -143,3 +145,5 @@ int main() {
 
 
 */
+
+
