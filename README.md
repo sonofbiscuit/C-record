@@ -30,4 +30,5 @@ StlStringChange为实现字符串的部分操作，trim、split、replace<br>
 lifeGame为生命游戏<br>
 Dynamic为石头游戏3<br>
 MatrixSearch为矩阵搜索(BFS,DP等)<br>
+SplitIntoFibonacciSequence为回溯加剪枝(不断遍历回溯)，很重要<br>
 
