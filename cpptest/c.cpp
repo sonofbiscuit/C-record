@@ -10,14 +10,22 @@
 #include <stack>
 #include <queue>
 #include <deque>
-#include "time.h"
+#include <time.h>
 #include "StlStringChange.h"
 #include <numeric>
+#include <functional>
+
 
 /* #pragma GCC optimize(2) //O2优化
 */
 using namespace std;
 using namespace strtool;
+
+using PII = pair<int, int>;
+
+
+//[captures] (params) mutable-> type{...} //lambda 表达式的完整形式
+
 
 /*
 string s1 = "hiya";    // 拷贝初始化
@@ -27,6 +35,18 @@ string s3(10, 'c');    // 直接初始化
 //多用直接初始化，少用拷贝初始化
 
 //循环时，前自增大于后自增，前自增返回的是自增后的自己，后自增返回的是自增前自己的副本(临时变量)
+
+
+template <typename Dtype>
+unsigned int __builtin_popcount(Dtype u)
+{
+	u = (u & 0x55555555) + ((u >> 1) & 0x55555555);
+	u = (u & 0x33333333) + ((u >> 2) & 0x33333333);
+	u = (u & 0x0F0F0F0F) + ((u >> 4) & 0x0F0F0F0F);
+	u = (u & 0x00FF00FF) + ((u >> 8) & 0x00FF00FF);
+	u = (u & 0x0000FFFF) + ((u >> 16) & 0x0000FFFF);
+	return u;
+}
 
 
 //=======================================================并查集=====================================
@@ -2167,8 +2187,42 @@ int findMin(vector<int>& nums) {
 
 
 //474 1和0
+/*
+给你一个二进制字符串数组 strs 和两个整数 m 和 n 。
+请你找出并返回 strs 的最大子集的大小，该子集中 最多 有 m 个 0 和 n 个 1 。
+如果 x 的所有元素也是 y 的元素，集合 x 是集合 y 的 子集 。
+*/
+pair<int, int> zeroandone(string str) {
+	int count0 = 0, count1 = 0;
+	for (auto a : str) {
+		a == '0' ? count0++ : count1++;
+	}
+	return make_pair(count0, count1);
+}
+
 int findMaxForm(vector<string>& strs, int m, int n) {
-	return 0;
+	int len = strs.size();
+	vector<pair<int, int>> count_word;
+	for (auto a : strs) {
+		count_word.push_back(zeroandone(a));
+	}
+	vector<vector<vector<int>>> dp(len+1,vector<vector<int>>(m+1,vector<int>(n+1)));
+	
+	for (int k = 1; k <= len; ++k) {
+		for (int i = 0; i <= m; ++i) { 
+			for (int j = 0; j <= n; ++j) {  //此时使用i个0,j个1
+				if (i >= count_word[k - 1].first && j >= count_word[k - 1].second) {
+					dp[k][i][j] = max(dp[k - 1][i][j], dp[k - 1][i - count_word[k - 1].first][j - count_word[k - 1].second] + 1);
+				}
+				else {
+					dp[k][i][j] = dp[k - 1][i][j];
+				}
+			}
+		}
+	}
+
+
+	return dp[len][m][n];
 }
 
 //约瑟夫环
@@ -2328,7 +2382,7 @@ int rob(vector<int>& nums) {
 
 
 
-//474 一和零
+//474 一和零  1和0
 class ZeroAndOne {
 public:
 	vector<int> countZeroOne(string s) {
@@ -2901,23 +2955,6 @@ int maxSumMinProduct(vector<int>& nums) {
 
 
 
-
-
-//1857. 有向图中最大颜色值
-int largestPathValue(string colors, vector<vector<int>>& edges) {
-	int node_size = colors.size();
-	vector<int> node_in(node_size,0);
-	unordered_map<int, vector<int>> graph(node_size);
-
-	for (auto a : edges) {
-		node_in[a[1]]++; //保存所有结点的入度
-		graph[a[0]].emplace_back(a[1]); //存图
-	}
-	
-	return 0;
-}
-
-
 //1734.解码异或后的排列
 vector<int> decode(vector<int>& encoded) {
 	//前n个正整数的排列，n为奇数
@@ -3064,6 +3101,15 @@ private:
 	vector<pair<int, int>> frequency;
 	vector<vector<int>> comb2_ans;
 	vector<int> comb2_temp;
+
+	vector<int> temp3;
+	vector<vector<int>> ans3;
+
+	vector<int> mem4;
+	int temp4;
+	int n4;
+	int n4_2;
+
 public:
 	void dfs1(vector<int>& candidates, int target, vector<vector<int>>& ans, vector<int>& temp_str, int index) {
 		if (index == candidates.size()) {
@@ -3157,6 +3203,25 @@ public:
 
 	*/
 
+	void dfs3(int k, int n, int num) {
+		if (n == 0 && k == 0) {
+			ans3.emplace_back(temp3);
+			return;
+		}
+		if (num > 9 || k == 0) {
+			return;
+		}
+		temp3.emplace_back(num);
+		dfs3(k - 1, n - num, num + 1);
+		temp3.pop_back();
+		dfs3(k, n, num + 1);
+	}
+	vector<vector<int>> combinationSum3(int k, int n) {
+		dfs3(k, n, 1);
+		return ans3;
+	}
+
+
 	/*
 	* 组合总和IV  377
 	* 给你一个由 不同 整数组成的数组 nums ，和一个目标整数 target 。请你从 nums 中找出并返回总和为 target 的元素组合的个数。
@@ -3164,28 +3229,2146 @@ public:
 		   顺序不同的序列被视作不同的组合
 	*/
 
+	void dfs4(vector<int> nums, int target, int& ans) {
+		if (target == 0) {
+			ans++;
+			return;
+		}
+		if (target < 0) {
+			return;
+		}
+		for (auto num : nums) {
+			dfs4(nums, target - num, ans);
+		}
+	}
 
+	int combinationSum4(vector<int>& nums, int target) {
+		n4 = nums.size();
+		temp4 = 0;
+		dfs4(nums, target,temp4);
+		return temp4;
+	}   //暴力会超时
+
+
+	//记忆化搜索
+	//mem[value]表示target为value时有几个方案数
+	int mem_search(vector<int>& nums, int target) {
+		if (mem4[target] != -1) {
+			return mem4[target]; //走过了，直接返回数目
+		}
+		//没走过
+		int res = 0;
+		for (auto num : nums) {
+			if (target - num >= 0) {
+				res += mem_search(nums, target - num);
+			}
+		}
+		mem4[target] = res;
+	}
+
+	int combinationSum4_2(vector<int>& nums, int target) {
+		n4_2 = nums.size();
+		mem4.resize(target + 1, -1);
+		mem_search(nums, target);
+		mem4[0] = 1;
+		return mem4[target];
+	}
+
+
+	//dp
+	int combinationSum4_3(vector<int>& nums, int target) {
+		int ans = 0;
+		vector<vector<unsigned long long>> dp(target + 1, vector<unsigned long long> (target+1));
+		dp[0][0] = 1;
+		for (int i = 1; i <= target; ++i) { //选择多少个,因为最小数为1，因此最大长度为taregt
+			for (int j = 1; j <= target; ++j) { //当前值
+				for (auto num : nums) { //从头开始取
+					if (j - num >= 0) {
+						dp[i][j] += dp[i - 1][j - num];
+					}
+				}
+			}
+			ans += dp[i][target];
+		}
+		return ans;
+	}
+};
+
+
+
+//12. 整数转罗马数字
+//给你一个整数，将其转为罗马数字。
+string intToRoman(int num) {
+	vector<int> nums = { 1,4,5,9,10,40,50,90,100,400,500,900,1000 };
+	vector<string> rep = { "I","IV","V","IX","X","XL","L","XC","C","CD","D","CM","M" };
+
+	string ans("");
+	for (int i = 12; i >= 0; --i) {
+		while (num >= nums[i]) {
+			ans += rep[i];
+			num -= nums[i];
+		}
+	}
+	return ans;
+}
+
+
+
+//8. 字符串转换整数 (atoi)
+int myAtoi(string s) {
+	auto a = s.find_first_not_of(' ');
+	int pre_zero = 1;
+	int pos = 1;
+	long long ans = 0;
+	if (s[a] == '-') {
+		pos = -1;
+		a++;
+	}
+	else if (s[a] == '+') {
+		pos = 1;
+		a++;
+	}
+		
+	for (int i = a; i < s.size(); ++i) {
+		if (s[i] == '0' && pre_zero) {
+
+			continue;
+		}
+		if (s[i] != 0) {
+			if (s[i] < '0' && s[i]>9) {
+				break;
+			}
+			else {
+				ans = ans * 10 + s[i] - '0';
+				pre_zero = 0;
+			}
+		}
+	}
+	cout << pos*ans << endl;
+	return ans;
+}
+
+//1827. 最少操作使数组递增
+int minOperations(vector<int>& nums) {
+	int opt = 0;
+	for (int i = 1; i < nums.size(); ++i) {
+		if (nums[i] <= nums[i - 1]) {
+			opt += nums[i - 1] + 1 - nums[i];
+			nums[i] = nums[i - 1] + 1;
+		}
+	}
+	cout << opt << endl;
+	return opt;
+}
+
+
+//455. 分发饼干
+int findContentChildren(vector<int>& g, vector<int>& s) {
+	sort(g.begin(), g.end());
+	sort(s.begin(), s.end());
+	int sum = 0;
+	int g_index = 0, s_index = 0;
+	while (g_index < g.size() && s_index < s.size()) {
+		if (s[s_index] >= g[g_index]) {
+			g_index++;
+			//sum++;
+		}
+		s_index++;
+	}
+	cout << g_index << endl;
+	return g_index;
+}
+
+//52双周赛 1
+string sortSentence(string s) {
+	string temp("");
+	vector<string> str(10);
+	for (int i = 0, pre_index = 0; i < s.size(); ++i) {
+		if ('0' <= s[i] && s[i] <= '9') {
+			temp = s.substr(pre_index, i - pre_index);
+			str[s[i] - '0'] = temp;
+			pre_index = i + 2;
+			temp = "";
+		}
+	}
+
+	string ans("");
+	for (auto a : str) {
+		if (a != "") {
+			ans += a;
+			ans += " ";
+		}
+	}
+	ans.erase(ans.size() - 1);
+	return ans;
+}
+
+
+
+
+vector<vector<string>> rotateTheBox(vector<vector<string>>& box) {
+	int m = box.size(); //row
+	int n = box[0].size(); //col
+	for (int i = 0; i < m; ++i) {
+		int empty_count = 0;
+		for (int j = n - 1; j >= 0; --j) {
+			if (box[i][j] == ".") {
+				empty_count++;
+			}
+			else if (box[i][j] == "*") {
+				empty_count = 0;
+			}
+			else {
+				string temp = box[i][j + empty_count];
+				box[i][j + empty_count] = box[i][j];
+				box[i][j] = temp;
+			}
+		}
+	}
+	return box;
+}
+
+
+//5759. 找出所有子集的异或总和再求和
+void dfssubset(vector<int> nums, int& ans,int temp,int index) {
+	if (index == nums.size()) {
+		ans += temp;
+		return;
+	}
+	dfssubset(nums, ans, temp, index+1);
+	dfssubset(nums, ans, temp^= nums[index],index+1);
+
+}
+
+//使用二进制表示法，遍历所有情况
+int subsetXORSum(vector<int>& nums) {
+	//首先考虑所有的子集数量，用n位长的二进制数来表示nums的每一位取或不取
+	//如1010表示取第一位和第三位
+	//爆搜
+
+	int ans = 0;
+	int n = nums.size();
+	int total_sub = 1 << n;
+	for (int i = 0; i < total_sub; i++) { //i穷举所有情况
+		int temp = 0;
+		for (int j = 0; j < n; ++j) { //j取位
+			if ((1 & (i >> j)) != 0) { //取出二进制i的末位，若这位是1，则挑选出nums[j]
+				temp ^= nums[j];
+			}
+		}
+		ans += temp;
+	}
+	return ans;
+
+	////dfs爆搜
+	//int ans = 0;
+	//dfssubset(nums, ans, 0, 0);
+	//cout << ans << endl;
+	//return ans;
+}
+
+
+
+//5760. 构成交替字符串需要的最小交换次数
+int minSwaps(string s) {
+	/*int count_1 = 0;
+	int count_0 = 0;
+	int ans = 0;
+	for (auto a : s) {
+		if (a == '0') {
+			count_0++;
+		}
+		else {
+			count_1++;
+		}
+	}
+	if (abs(count_1-count_0) > 1) {
+		return -1;
+	}
+
+	if (count_1 == count_0) {
+		int rep1 = 0;
+		for (int i = 0; i < s.size(); i+=2) {
+			if (s[i] != '1')
+				rep1++;
+		}
+		int rep0 = 0;
+		for (int i = 1; i < s.size(); i += 2) {
+			if (s[i] != '0')
+				rep0++;
+		}
+		ans = min(rep1, rep0);
+	}
+	else if (count_1 > count_0) {
+		for (int i = 0; i < s.size(); i += 2) {
+			if (s[i] != '1')
+				ans++;
+		}
+	}
+	else {
+		for (int i = 0; i < s.size(); i += 2) {
+			if (s[i] != '0')
+				ans++;
+		}
+	}
+	cout << ans << endl;
+	return ans;*/
+
+
+	//第一步：统计1和0的个数
+	int count_1 = count(s.begin(), s.end(), '1'); // algorithm count
+	int count_0 = count(s.begin(), s.end(), '0');
+	//count_if(a.begin(),a.end(),pred)
+	/*
+	bool IsOdd (int i) { return ((i%2)==1); }
+	int mycount = count_if (myvector.begin(), myvector.end(), IsOdd);
+	*/
+
+	//s的形式只能是1010...   0101...
+	int n = s.size();
+	int ans = INT_MAX;
+	int c1 = 0;
+
+	int c2 = 0;
+	if (count_1 == (n + 1) / 2 && count_0 == (n / 2)) { //满足条件说明1的个数和0相等或者比0多一个,此时形式为1010...
+		for (int i = 0; i < n; i += 2) {
+			if (s[i] != '1') {
+				c1++;
+			}
+		}
+		ans = min(ans, c1);
+	}
+
+
+	//0101...
+	
+	if (count_0 == (n + 1) / 2 && count_1 == n / 2) { //当0和1的个数相同或者0比1多一个时，满足条件
+		for (int i = 0; i < n; i += 2) {
+			if (s[i] != '0') {
+				c2++;
+			}
+		}
+		ans = min(ans, c2);
+	}
+	if (ans == INT_MAX) {
+		return -1;
+	}
+	else {
+		return ans;
+	}
+}
+
+
+
+//5761. 找出和为指定值的下标对
+//FindSumPairs(int[] nums1, int[] nums2) 使用整数数组 nums1 和 nums2 初始化 FindSumPairs 对象。
+//void add(int index, int val) 将 val 加到 nums2[index] 上，即，执行 nums2[index] += val 。
+//int count(int tot) 返回满足 nums1[i] + nums2[j] == tot 的下标对(i, j) 数目。
+class FindSumPairs {
+private:
+	vector<int> _nums1;
+	vector<int> _nums2;
+	unordered_map<int, int> mp1, mp2;
+public:
+	FindSumPairs(vector<int>& nums1, vector<int>& nums2) {
+		_nums1 = nums1;
+		_nums2 = nums2;
+		for (auto a : _nums1) {
+			mp1[a]++;
+		}
+		for (auto b : _nums2) {
+			mp2[b]++; //统计每种数字的个数
+		}
+	}
+
+	void add(int index, int val) {
+		mp2[_nums2[index]]--;
+		_nums2[index] += val;
+		mp2[_nums2[index] + val]++;
+	}
+
+	int count(int tot) {
+		int ans = 0;
+		for (auto a : _nums1) {
+			int gap = tot - a;
+			if (mp2.count(gap)) {
+				ans += mp2[gap];
+			}
+		}
+		return ans;
+	}
+};
+
+//5762. 恰有 K 根木棍可以看到的排列数目
+//有 n 根长度互不相同的木棍，长度为从 1 到 n 的整数。
+//请你将这些木棍排成一排，并满足从左侧 可以看到 恰好 k 根木棍。从左侧 可以看到 木棍的前提是这个木棍的 左侧 不存在比它 更长的 木棍。
+
+int rearrangeSticks(int n, int k) {
+	int MOD = 1e9 + 7;
+	vector<vector<long long>> dp(n + 1,vector<long long>(k+1));
+	//dp[i][j]表示i根木棍里，可以看到j根木棍
+	//最后一根再放最短的
+	dp[1][1] = 1;
+	for (int i = 2; i <= n; ++i) {
+		for (int j = 1; j <= k; ++j) {
+			dp[i][j] = (dp[i - 1][j] * (i-1) + dp[i - 1][j - 1] * 1)%MOD;
+			//前i-1根木头已经看到了j根，我最后一根是最短的，那么放在任何一个木头之后都看不到我dp[i-1][j]*(i-1)
+			//前i-1根木头已经看到了j-1根，差最后一根，我最后一根最短，那么只能放在第一根，为dp[i-1][j-1]*1
+		}
+	}
+	cout << dp[n][k];
+	return dp[n][k];
+}
+
+
+//1442. 形成两个异或相等数组的三元组数目
+int countTriplets(vector<int>& arr) {
+	int n = arr.size();
+	vector<int> pre_xor(n + 1);
+	for (int i = 1; i <= n; ++i) {
+		pre_xor[i] = pre_xor[i - 1] ^ arr[i - 1];
+	}
+	int ans = 0;
+	int temp1 = 0, temp2 = 0;
+	for (int i = 1; i < n; i++) {
+		for (int j = i + 1; j <= n; j++) {
+			for (int k = i + 1; k <= j; ++k) {
+				if (pre_xor[i - 1] == pre_xor[j]) {
+					ans++;
+				}
+			}
+		}
+	}
+	return ans;
+}
+
+//1738. 找出第 K 大的异或坐标值
+int kthLargestValue(vector<vector<int>>& matrix, int k) {
+	//前缀和
+	int m = matrix.size();
+	int n = matrix[0].size();
+	vector<vector<int>> pre_xor(m + 1, vector<int>(n + 1));
+
+	vector<int> ans;
+	for (int i = 1; i <= m; ++i) {
+		for (int j = 1; j <= n; ++j) {
+			pre_xor[i][j] = matrix[i - 1][j - 1] ^ pre_xor[i - 1][j] ^ pre_xor[i][j - 1] ^ pre_xor[i - 1][j - 1];
+			ans.push_back(pre_xor[i][j]);
+		}
+	}
+
+	sort(ans.begin(), ans.end(), greater<int>());
+	return ans[k - 1];
+}
+
+
+//快速选择算法
+// 第K大的数
+class quickSelect {
+public:
+	int findKthLargest(vector<int>& nums, int k) {
+		int n = nums.size();
+		return quickselect(nums, 0, n-1, n - k);
+	}
+
+	//quickselect判断下标
+	//random 产生随即下标
+	//partion分离，进行每次子排序
+	int quickselect(vector<int>& nums, int low, int high, int k) {
+		int r_index = random_index(low, high);
+		swap(nums[r_index], nums[high]);
+		int proper_index = partion(nums, low, high);
+		if (proper_index == k) {
+			cout << nums[proper_index];
+			return nums[proper_index];
+		}
+		else if (proper_index < k) {
+			quickselect(nums, proper_index + 1, high, k);
+		}
+		else {
+			quickselect(nums, low, proper_index - 1, k);
+		}
+
+	}
+
+	int random_index(int left, int right) {
+		return rand() % (right - left + 1) + left; //generate index between left and right
+	}
+	
+	int partion(vector<int>& nums, int left, int right) {
+		int i = left - 1;
+		for (int j = left; j < right; ++j) {
+			if (nums[j] <= nums[right]) {
+				swap(nums[++i], nums[j]); //很巧妙
+			}
+		}
+		swap(nums[right], nums[i+1]);
+		return i+1;
+	}
 
 };
 
+//692. 前K个高频单词
+vector<string> topKFrequent(vector<string>& words, int k) {
+	unordered_map<string, int> mp;
+	for (auto a : words) {
+		mp[a]++;
+	}
+	
+
+	auto cmp = [](const auto& a, const auto& b) {
+		return a.second == b.second ? a.first<b.first : a.second>b.second; //小根堆，出现次数相同则字典序优先
+	};
+	priority_queue<pair<string, int>, vector<pair<string, int>>, decltype(cmp)> que(cmp);
+	
+	//将单词存入优先队列
+	for (auto& a : mp) {
+		que.push(a);
+		if (que.size() > k) {
+			que.pop();
+		}
+	}
+
+	vector<string> ans;
+	for (int i = 0; i < k;++i) {
+		ans.emplace_back(que.top().first);
+		que.pop();
+	}
+	return ans; 
+
+}
+
+
+//1035. 不相交的线
+//1143. 最长公共子序列的变种题
+int maxUncrossedLines(vector<int>& nums1, vector<int>& nums2) {
+	int m = nums1.size();
+	int n = nums2.size();
+	vector<vector<int>> dp(m+1, vector<int>(n+1));
+	//dp[i][j]表示 nums1[0~i)，nums2[0~j)的最大连线长度
+	dp[0][0] = 0;
+	for (int i = 1; i <= m; ++i) {
+		for (int j = 1; j <= n; ++j) {
+			if (nums1[i - 1] == nums2[j - 1]) { //相等了，可以选
+				dp[i][j] = dp[i - 1][j - 1] + 1;
+			}
+			else { //不相等，不选
+				dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
+			}
+		}
+	}
+	cout << dp[m][n] << endl;
+	return dp[m][n];
+}
+
+
+//15. 三数之和
+//先确定a，再寻找b+c = -a， b从前往后，c从后往前寻找
+vector<vector<int>> threeSum(vector<int>& nums) {
+	sort(nums.begin(), nums.end()); //先排序，便于后续去重
+	vector<vector<int>> ans;
+	for (int i = 0; i < nums.size() - 1; ++i) {
+		if (i > 0 && nums[i] == nums[i - 1]) { //防止重复元素
+			continue;
+		}
+		int temp = nums[i];
+		int right = nums.size() - 1; //right只用走一次
+		for (int j = i + 1; j < nums.size(); ++j) {
+			if (nums[j] == nums[j - 1]) {
+				continue;
+			}
+			while (j < right && nums[j] + nums[right] + temp>0) {
+				right--;
+			}
+			if (j == right) {
+				break;
+			}
+			if (nums[j] + nums[right] + temp == 0) {
+				ans.push_back({ nums[j],nums[right],temp });
+			}
+		}
+	}
+	return ans;
+}
+
+
+
+bool checkZeroOnes(string s) {
+	int ele_0 = 0;
+	int ele_1 = 0;
+	int temp0 = 0, temp1 = 0;
+	int i = 0, j = 0;
+	while (j < s.size()) {
+		if (s[j] == s[i]) {
+			if (s[j] == '1') {
+				
+				j++;
+				temp1++;
+			}
+			else {
+
+				j++;
+				temp0++;
+			}
+		}
+		else {
+			ele_0 = max(ele_0, temp0);
+			ele_1 = max(ele_1, temp1);
+			temp0 = 0;
+			temp1 = 0;
+			i = j;
+			j = j + 1;
+			if (s[i] == '1') {
+				temp1 = 1;
+			}
+			else {
+				temp0 = 1;
+			}
+		}
+	}
+	ele_0 = max(ele_0, temp0);
+	ele_1 = max(ele_1, temp1);
+	return ele_1 > ele_0 ? true : false;
+}
+
+
+//二分
+bool can_arive(vector<int>& dist, double hour, int mid) {
+	double hour_count = 0;
+	for (int i = 0; i < dist.size() - 1; ++i) {
+		int temp = 0;
+		if (dist[i] % mid == 0) {
+			temp = dist[i] / mid;
+		}
+		else {
+			temp = dist[i] / mid + 1;
+		}
+		hour_count += (double)temp;
+	}
+	hour_count += dist[dist.size() - 1] / (double)mid;
+	return hour_count <= hour;
+}
+
+
+//1870. 准时到达的列车最小时速
+int minSpeedOnTime(vector<int>& dist, double hour) {
+	int n = dist.size();
+	if ((int)hour < n - 1) {
+		return -1;
+	}
+
+	int min_v = 1;
+
+	int max_v = *max_element(dist.begin(), dist.end())*100;
+
+	while (min_v < max_v) {
+		int mid = (min_v + max_v) / 2;
+		if (can_arive(dist, hour, mid)) {
+			max_v = mid;
+		}
+		else {
+			min_v = mid + 1;
+		}
+	}
+	return min_v;
+}
+
+
+//1871. 跳跃游戏 VII
+bool canReach(string s, int minJump, int maxJump) {
+	int n = s.size();
+	vector<int> pre(n+1); //前缀和
+	pre[1] = 1;
+	vector<int> dp(n,0);
+	dp[0] = 1;
+	for (int i = 1; i < n; ++i) {
+		if (s[i] == '0') {
+			int left = max(0, i - maxJump);
+			int right = i - minJump;
+			if (right >= 0 && left <= right && pre[right + 1] - pre[left] > 0) {//前缀和差大于0，说明区间内有可以到达的石头
+				dp[i] = 1; //能到达
+			}
+		}
+		pre[i + 1] = pre[i] + dp[i]; //dp[i]表示可以到达此处
+	}
+	return dp[n - 1];
+}
+
+
+
+//810. 黑板异或游戏
+//数学解法
+bool xorGame(vector<int>& nums) {
+	return false;
+
+}
+
+//1707. 与数组中元素的最大异或值
+//vector<int> maximizeXor(vector<int>& nums, vector<vector<int>>& queries) {
+//
+//}
+
+
+//664. 奇怪的打印机
+int strangePrinter(string s) { //和最长回文子串的思想很相似
+	int n = s.size();
+	vector<vector<int>> dp(n, vector<int>(n));
+	//dp[i][j]  表示从s[i]~s[j]的区间[i,j]最小打印次数
+	
+	for (int i = n - 1; i >= 0; --i) {
+		dp[i][i] = 1;
+		for (int j = i+1; j < n; ++j) {
+			if (s[j] == s[i]) {
+				dp[i][j] = dp[i][j - 1];  
+			}
+			else {
+				//两端字母不相同时，需要分别打印左右两边的打印。
+				//记两部分分别为区间 [i,k][i,k] 和区间 [k+1,j][k+1,j]（其中 i <= k < j）
+				//dp[i][j] = min(dp[i][k]+dp[k+1][j])   k=[i,j) 
+				int min_print = INT_MAX;
+				for (int k = i; k < j; ++k) {
+					min_print = min(min_print, dp[i][k] + dp[k + 1][j]);
+				}
+				dp[i][j] = min_print;
+			}
+		}
+	}
+	cout << dp[0][n - 1];
+	return dp[0][n - 1];
+}
+
+
+
+
+
+string reverseParentheses(string s) {
+	stack<char> st;
+	string temp = "";
+	for (auto a : s) {
+		if (a == ')') {
+			while (st.top() != '(') {
+				temp += st.top();
+				st.pop();
+			}
+			st.pop();
+			for (int i = 0; i < temp.size();++i) {
+				st.push(temp[i]);
+			}
+			temp = "";
+		}
+		else {
+			st.push(a);
+		}
+	}
+	string ans = "";
+	while (!st.empty()) {
+		ans.push_back(st.top());
+		st.pop();
+	}
+	return ans;
+}
+
+//238. 除自身以外数组的乘积
+vector<int> productExceptSelf(vector<int>& nums) {
+	//不使用除法，输出数组中除了当前位置数的其他所有数的乘积
+	int  n = nums.size();
+	/*vector<int> left(n+1,1);
+	vector<int> right(n+1,1);
+	for (int i = 0; i < n; ++i) {
+		left[i + 1] = left[i] * nums[i];
+		right[n - i - 1] = right[n - i] * nums[n - i - 1];
+	}
+	vector<int> ans(n);
+	for (int i = 0; i < n; ++i) {
+		ans[i] = left[i] * right[i + 1];
+	}
+	return ans;*/
+	vector<int> ans(n,1);
+	int left = 1, right = 1;
+	for (int i = 0; i < n; ++i) {
+		ans[i] *= left;
+		left *= nums[i];
+
+		ans[n - i - 1] *= right;
+		right *= nums[n - i - 1];
+	}
+	return ans;
+}
+
+
+
+//477. 汉明距离总和
+//计算一个数组中，任意两个数之间汉明距离的总和。
+int totalHammingDistance(vector<int>& nums) {
+	if (nums.empty()) {
+		return 0;
+	}
+	int n = nums.size();
+	int ans = 0;
+	for (int i = 0; i < 32; ++i) {
+		int cnt[1][2];
+		memset(cnt, 0, sizeof(cnt));
+		for (auto num : nums) {
+			int temp = num >> i;
+			cnt[0][temp & 1]++;
+		}
+		ans += cnt[0][0] * cnt[0][1];
+	}
+	return ans;
+}
+
+
+
+//5774. 使用服务器处理任务
+//vector<int> assignTasks(vector<int>& servers, vector<int>& tasks) {
+//	int n = servers.size(), m = tasks.size();
+//	//记录服务器下标
+//	vector<int> ser_index(n);  //将其按照权重大小排序后，记录每个位置对应的原先的下标
+//	iota(ser_index.begin(), ser_index.end(), 0);
+//	sort(ser_index.begin(), ser_index.end(), [&](const auto& a, const auto& b) {
+//		return servers[b] > servers[a];
+//	});
+//	priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> que;   //按照结束时间排序，结束时间相同则按照服务器权重排序
+//	vector<int> ans(m);
+//	vector<int> ser_rec(n, 0);
+//	queue<int> delay;
+//
+//	for (int i = 0; i < m; ++i) {
+//		while (!que.empty() && que.top().first <= i) {
+//			ser_rec[ser_index[que.top().second]] = 0;
+//			que.pop();
+//		}
+//		if (que.size() == n) {
+//			delay.push(i);
+//			continue;
+//		}
+//		
+//		for (int j = 0; j < n;++j) {
+//			if (ser_rec[ser_index[j]] == 0) {
+//				if (delay.empty()) {
+//					que.emplace(make_pair(i + tasks[i], j)); //按照权重从小到大取
+//					ans[i] = ser_index[j];
+//					ser_rec[ser_index[j]] = 1;
+//					break;
+//				}
+//				else {
+//					que.emplace(make_pair(delay.front() + tasks[i], j));
+//					ans[delay.front()] = ser_index[j];
+//					ser_rec[ser_index[j]] = 1;
+//					delay.pop();
+//					break;
+//				}
+//			}
+//		}
+//		
+//	}
+//	int time_rec = 0;
+//	vector<pair<int,int>> delay_ser;
+//	while (!delay.empty()) {
+//		time_rec = max(time_rec, que.top().first); //目前队列中第一个任务的结束时间
+//		delay_ser.push_back(que.top());
+//		que.pop();
+//		while (que.top().first == time_rec) {  //若多个服务器同时完成
+//			delay_ser.push_back(que.top());
+//			que.pop();
+//		}
+//		sort(delay_ser.begin(), delay_ser.end(), [](const auto& a, const auto& b) {
+//			return a.second > b.second; //按照服务器优先级倒序排序
+//		});
+//		
+//		int task_cnt = min(delay.size(), delay_ser.size());
+//		while(task_cnt) {
+//			ans[m-delay.size()]= ser_index[delay_ser[delay_ser.size()-1].second];
+//			delay_ser.pop_back();
+//			delay.pop();
+//			task_cnt--;
+//		}
+//	}
+//	
+//	return ans;
+//}
+
+class TasksProcessing {
+private:
+	using PII = pair<int, int>;
+public:
+	vector<int> assignTasks(vector<int>& servers, vector<int>& tasks) {
+		int n = servers.size(), m = tasks.size();
+		//server 
+		priority_queue<PII, vector<PII>, greater<PII>> busy_que; //结束时间，所使用服务器下标
+		priority_queue<PII, vector<PII>, greater<PII>> idle_que; //未使用的server
+		for (int i = 0; i < n; ++i) {
+			//初始化按照服务器权值排序，权值相同，按照下标排序
+			idle_que.emplace(make_pair(servers[i], i)); 
+		}
+		
+		int time_stamp = 0; // 当前时间
+		//当busy队列中的任务满足t <= time_stamp ,则说明执行完成，可转移到idle
+
+		//[captures] (params) mutable-> type{...} //lambda 表达式的完整形式
+		auto release = [&]() {
+			while (!busy_que.empty() && busy_que.top().first <= time_stamp) {
+				auto&& [_, index] = busy_que.top(); //释放的服务器下标
+				idle_que.emplace(servers[index], index); //加入到空闲服务器
+				busy_que.pop();
+			} // && universal reference 万能引用
+		};
+
+		vector<int> ans;
+		for (int i = 0; i < m; ++i) { //遍历任务
+			time_stamp = max(time_stamp, i);
+			release();
+			if (idle_que.empty()) { //空闲服务器为空
+				time_stamp = busy_que.top().first; //为空则看一下正在运行的最小结束时间
+				release();//当timestamp为busyque里的最小结束时间时，释放一下任务
+			}
+
+			auto&& [_, index] = idle_que.top();
+			busy_que.emplace(make_pair(tasks[i] + time_stamp, index)); //该任务的结束时间和使用的服务器编号
+			ans.push_back(index); //加入所使用的服务器编号，为空也可以
+			idle_que.pop(); //将已经使用的服务器弹出
+		}
+		return ans;
+	}
+};
+
+
+//1744. 你能在你最喜欢的那天吃到你最喜欢的糖果吗？
+vector<bool> canEat(vector<int>& candiesCount, vector<vector<int>>& queries) {
+	//前缀和
+	int n = candiesCount.size();
+	vector<int> pre_sum(n+1,0);
+	for (int i = 1; i <= n; ++i) {
+		pre_sum[i] = pre_sum[i - 1] + candiesCount[i - 1];
+	}
+	vector<bool> ans(queries.size());
+	//能否吃到，判断糖果范围在不在 pre_sum[queries[][0]]~pre_sum[queries[][0]+1]。吃的糖果的范围在  day*1~day*maxcandiesnum
+	for (int i = 0; i < queries.size(); ++i) {
+		int candies_low = queries[i][1] * 1;
+		int candies_upper = queries[i][1] * queries[i][2];
+		if (candies_upper<pre_sum[queries[i][0]] || candies_low>pre_sum[queries[i][0]+1]) {
+			ans[i] = false;
+		}
+		else {
+			ans[i] = true;
+		}
+	}
+	return ans;   ////结果错了，下标错误
+}
+
+
+//523. 连续的子数组和
+//前缀和+同余定理
+bool checkSubarraySum(vector<int>& nums, int k) {
+	int pre_sum = 0;
+	int pre_mod = 0;
+	unordered_map<int, int> mp;
+	mp[0] = -1;
+	for (int i = 0; i < nums.size();++i) {
+		pre_sum += nums[i];
+		pre_mod = pre_sum % k;
+		if (mp.count(pre_mod)) {
+			if (i - mp[pre_mod] >= 2) {
+				return true;
+			}
+		}
+		else {
+			mp[pre_mod] = i;
+		}
+	}
+	return false;
+}
+
+
+
+//525. 连续数组
+//给定一个二进制数组 nums , 找到含有相同数量的 0 和 1 的最长连续子数组，并返回该子数组的长度。
+//使用前缀和
+int findMaxLength(vector<int>& nums) {
+	unordered_map<int, int> mp;
+	int cnt = 0;
+	int n = nums.size();
+	vector<int> renums(n);
+	for (int i = 0; i < n; ++i) {
+		if (nums[i] == 0) {  //0变为-1
+			renums[i] = -1;
+		}
+		else {
+			renums[i] = nums[i];
+		}
+	}
+
+	int maxlength = 1;
+	mp[0] = -1;
+	for (int i = 0; i < n; ++i) {
+		cnt = cnt + renums[i];
+		/*
+			if(nums[i]==1){  //简写前缀和
+            cnt++;
+        }else{
+            cnt--;
+        }
+		*/
+		if (mp.count(cnt)) {
+			int index = mp[cnt];
+			maxlength = max(maxlength, i - index);
+		}
+		else {
+			mp[cnt] = i;
+		}
+	}
+	cout << maxlength << endl;
+	return maxlength;
+}
+
+
+
+
+int reductionOperations(vector<int>& nums) {
+	unordered_map<int, int> mp;
+	for (auto a : nums) {
+		mp[a]++;
+	}
+	set<int> st = set<int>(nums.begin(), nums.end());
+	int cnt = 0, index = 0;
+	for (auto a : st) {
+		if (index == 0) {
+			index++;
+			continue;
+		}
+		cnt += mp[a] * index;
+		index++;
+	}
+	return cnt;
+}
+
+
+
+
+//494. 目标和
+/*
+向数组中的每个整数前添加 '+' 或 '-' ，然后串联起所有整数
+返回可以通过上述方法构造的、运算结果等于 target 的不同 表达式 的数目。
+*/
+
+class targetsum {
+private:
+	int ans;
+public:
+	void dfs(vector<int>& nums, int target, int index, int temp_sum) {
+		if(index==nums.size()){
+			if (temp_sum == target) {
+				ans++;
+				return;
+			}
+			else {
+				return;
+			}
+		}
+		//当前位置为+
+		dfs(nums, target, index + 1, temp_sum + nums[index]);
+		//当前位置为-
+		dfs(nums, target, index + 1, temp_sum - nums[index]);
+		return;
+	}
+
+	int findTargetSumWays(vector<int>& nums, int target) {
+		ans = 0;
+		dfs(nums, target, 0, 0);
+		return ans;
+	}
+
+
+	//使用dp
+	/*
+		当总和为target时，添加正号的和为non_neg，添加负号的和为neg, 则有non_neg = sum - neg。
+		target = non_neg - neg=> target = sum-2 * neg => neg = (sum-target)/2
+		将问题转化为，在数组nums中选取一定数目的数字，使得他们的和为neg
+		dp[i][j]表示再前i个数字里，选取若干个数字，他们的和为j的方法
+	*/
+	int findTargetSumWays_dp(vector<int>& nums, int target) {
+		int n = nums.size();
+		int sum = accumulate(nums.begin(), nums.end(), 0);
+		int gap = sum - target;
+		int neg = (sum - target) / 2;
+		if (gap < 0 || gap % 2 != 0) {
+			return 0;
+		}
+
+		vector<vector<int>> dp(n + 1, vector<int>(neg + 1));
+		dp[0][0] = 1;
+		for (int i = 1; i <= n; ++i) {  //选取数
+			for (int j = 0; j <= neg; ++j) { //值
+				dp[i][j] = dp[i - 1][j];
+				if (j >= nums[i - 1]) { //可选
+					dp[i][j] += dp[i - 1][j - nums[i - 1]];
+				}
+				
+				
+			}
+		}
+		return dp[n][neg];
+	}
+};
+
+
+//1049. 最后一块石头的重量 II
+/*
+每一回合，从中选出任意两块石头，然后将它们一起粉碎。假设石头的重量分别为 x 和 y，且 x <= y。那么粉碎的可能结果如下：
+如果 x == y，那么两块石头都会被完全粉碎；
+如果 x != y，那么重量为 x 的石头将会完全粉碎，而重量为 y 的石头新重量为 y-x。
+最后，最多只会剩下一块 石头。返回此石头 最小的可能重量 。如果没有石头剩下，就返回 0。
+*/
+
+/*
+按照  494.目标和  的方法， 给每块石头加上正号和负号，最后选出绝对值离0最近的结果 
+
+方法一：回溯法 （不写）
+方法二：dfs+mem
+方法三：dp
+*/
+int lastStoneWeightII(vector<int>& stones) {
+	//执行相减的石头，记为non
+	//non的和最大为sum/2
+	int n = stones.size();
+	int sum = accumulate(stones.begin(), stones.end(), 0);
+	int acc = sum / 2;
+	vector<vector<int>> dp(n + 1, vector<int>(acc+1));  //dp[i][j]表示i个石头下，能装物品的最大值
+	dp[0][0] = 0;
+	for (int i = 1; i <= n; ++i) {
+		for (int j = 0; j <= acc; ++j) {
+			if (j >= stones[i - 1]) {
+				dp[i][j] = max(dp[i - 1][j], dp[i - 1][j - stones[i - 1]] + stones[i - 1]);
+			}
+			else {
+				dp[i][j] = dp[i - 1][j];
+			}
+		}
+	}
+	for (int j = acc;; --j) {
+		if (dp[n][j]) {
+			return abs(sum - 2 * dp[n][j]);
+		}
+	}
+}
+
+
+//1888. 使二进制字符串字符交替的最少反转次数
+//滑动窗口
+int minFlips(string s) {
+	string s_sum = s + s;
+	int n = s.size();
+	string s0 = "01";
+	string s1 = "10";
+	int cnt0 = 0, cnt1 = 0;
+	int ans = 0x3f3f3f3f;
+
+	for (int i = 0; i < 2 * n; ++i) {
+		if (s_sum[i] != s0[i%2]) {
+			cnt0++;
+		}
+		if (s_sum[i] != s1[i%2]) { //当前位不同，则修改次数+1
+			cnt1++;
+		}
+		if (i >= n) {
+			if (s0[(i - n) % 2] != s_sum[i - n]) {  //删除第一位，若第一位和字符串第一位不同，则说明不用再修改那一位，便把当时已经加上的修改次数减1
+				cnt0--;
+			}
+			if (s1[(i - n) % 2] != s_sum[i - n]) {
+				cnt1--;
+			}
+		}
+		if (i >= n - 1) {
+			ans = min({ ans,cnt0,cnt1 });
+		}
+	}
+	return ans;
+}
+
+//879. 盈利计划
+/*
+n 名员工
+第 i 种工作会产生 profit[i] 的利润，它要求 group[i] 名成员共同参与。
+如果成员参与了其中一项工作，就不能参与另一项工作。
+工作的任何至少产生 minProfit 利润的子集称为 盈利计划 。并且工作的成员总数最多为 n 。
+有多少种计划可以选择
+
+0-1背包，特殊情况，即要求价值最小
+*/
+int profitableSchemes(int n, int minProfit, vector<int>& group, vector<int>& profit) {
+	int MOD = (int)1e9 + 7;
+	int m = group.size();
+	vector<vector<vector<int>>> dp(m + 1, vector<vector<int>>(n + 1, vector<int>(minProfit + 1)));
+	//dp[i][j][k]表示  i项工作，j个人，利润至少为k的方案数
+	dp[0][0][0] = 1;
+	for (int i = 1; i <= m; ++i) {
+		for (int j = 0; j <= n; ++j) {
+			for (int k = 0; k <= minProfit; ++k) {
+				if (j >= group[i - 1]) { //人够
+					dp[i][j][k] = dp[i - 1][j][k] + dp[i-1][j - group[i - 1]][max(0, k - profit[i - 1])];  //当前利润为k
+					/*
+					第一种是当前工作利润 >=k，此时该背包的容量直接为 0（也就是说当前的工作利润已经满足了这个条件了，以后的工作利润至少为 0 就可以了）；
+
+					第二种是当前工作利润 < k，此时该背包的容量减少了 profit[i]
+					（也就是说在遍历下一个工作时，满足的工作利润至少为 k - profit[i]，二者取较大的。
+
+					*/
+				}
+				else { //人不够，无法开启
+					dp[i][j][k] = dp[i - 1][j][k];
+				}
+			}
+		}
+
+	}
+	int sum = 0;
+	for (int j = 0; j <= n; j++) {
+		sum = (sum + dp[m][j][minProfit]) % MOD;
+	}
+	return sum;
+}
+
+// 518. 零钱兑换 II
+// 给定不同面额的硬币和一个总金额。写出函数来计算可以凑成总金额的硬币组合数。假设每一种面额的硬币有无限个。 
+// 完全背包问题   组合问题
+int change(int amount, vector<int>& coins) {
+	int n = coins.size();
+	vector<int> dp(amount + 1);
+	dp[0] = 1;
+	for (auto coin : coins) { //选硬币 =>找物品
+		for (int i = coin; i <= amount; ++i) { //算价值=>算背包容量
+			dp[i] += dp[i - coin]; //i从coin开始选，避免重复
+		}
+	}
+	return dp[amount];
+}
+
+
+int bagProblemcomp(vector<int> weight, vector<int> value, int num, int capcity) {
+	vector<vector<int>> dp(num + 1, vector<int>(capcity + 1)); //一共num件物品，背包容量为capcity
+	//dp[i][j]表示将前i件物品装进限重为j的背包可以获得的最大价值
+	for (int i = 1; i <= num; ++i) { //num
+		for (int j = 0; j <= capcity; ++j) { //weight
+			if (j >= weight[i - 1]) { //此时是可以装下物品i的
+				dp[i][j] = max(dp[i - 1][j], dp[i][j - weight[i - 1]] + value[i - 1]); //选物品i与不选物品i.物品i可以重复选取，因此选取时写dp[i][...]
+			}
+			else {
+				dp[i][j] = dp[i - 1][j];
+			}
+		}
+	}
+	return dp[num][capcity];
+}
+
+//279. 完全平方数
+//给定正整数 n，找到若干个完全平方数（比如 1, 4, 9, 16, ...）使得它们的和等于 n。你需要让组成和的完全平方数的个数最少。
+int numSquares(int n) {
+	//1<=n<=10000
+	//1<=sqrt(n)<=100
+	//类似于 硬币面值为1~sqrt(n)
+	//硬币数量最大为n
+	vector<int> dp(n + 1,0x3f3f3f3f);
+	dp[0] = 0;
+	for (int i = 1; i*i <= n; ++i) {
+		for (int j = (pow(i,2)); j <= n; j++) {
+			dp[j] = min(dp[j], dp[j - (pow(i, 2))] + 1);
+		}
+	}
+	return dp[n];
+}
+
+//bfs求解完全平方数
+//若有结点值为12， 找出小于等于12的平方数，有1，4，9。 那么12的子节点分别为12-1  12-4  12-9
+//按照此规律，可构建出多叉树 
+ /*
+		          12
+	    11         8            3
+   10    7    2    7    4       2
+ 9 6 1  6 3   1   6  3  3  0    1    //12-4-4-4 = 0
+
+ 所使用的最少的平方数，即为找到0时候的层数
+ */     
+
+
+
+
+//1449. 数位成本和为目标值的最大数字
+/*
+动态规划
+目标值（容量）恰好为target
+数字1~9的cost为cost[i-1]，每位可以重复选取
+*/
+string largestNumber(vector<int>& cost, int target) {
+	//先使用dp计算出总cost为target的最长长度
+	vector<int> dp(target + 1, -0x3f3f3f3f);
+	dp[0] = 0;
+	for (auto a : cost) {
+		for (int i = a; i <= target; ++i) {
+			dp[i] = max(dp[i],dp[i-a]+1);
+		}
+	}
+
+	if (dp[target] < 0) {
+		return "0";
+	}//未找到恰巧等于target的组合
+	
+	int max_length = dp[target]; //最大长度 ，接着进行状态倒退
+	//当dp[i]和dp[i-cost[j]+1]相等时。说明选取了第j个数
+	string ans = "";
+	for (int i = 8, sum_cost = target; i >= 0; --i) {  //找出在满足最长长度的情况下，最大的数，当然从大到小遍历
+		for (int c = cost[i]; c <= sum_cost && dp[sum_cost] == dp[sum_cost - c] + 1; sum_cost -= c) {
+			ans += ('1' + i);  //下标i对应的数字为i+1
+		}
+	}
+
+	return ans;
+}
+
+//54双周赛
+//5767. 检查是否区域内所有整数都被覆盖
+//已知区间 ranges[i] = [starti, endi] ，如果整数 x 满足 starti <= x <= endi ，那么我们称整数x 被覆盖了
+bool isCovered(vector<vector<int>>& ranges, int left, int right) {
+	/*int tag = false;
+	for (int i = left; i <= right; ++i) {
+		tag = false;
+		for (auto a : ranges) {
+			if (i >= a[0] && i <= a[1]) {
+				tag = true;
+				break;
+			}
+		}
+		if (tag == false) {
+			return tag;
+		}
+	}
+	return true;*/
+	//暴力法，时间复杂度太高
+
+	//使用差分数组
+	/*对于差分数组，当[i,j]区间内全部+1，那么差分数组的i位置+1，j+1位置-1*/
+	vector<int> dff(52, 0);
+	for (auto range : ranges) {
+		dff[range[0]]++;
+		dff[range[1] + 1]--;
+	}
+	int pre_sum = 0;
+	for (int i = 0; i <= 50; ++i) {
+		pre_sum += dff[i];
+		if (i >= left && i <= right && pre_sum <= 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+//5768. 找到需要补充粉笔的学生编号
+class Solution_chalk {
+private:
+	using LL = long long;
+public:
+	int chalkReplacer(vector<int>& chalk, int k) {
+		LL sum = accumulate(chalk.begin(), chalk.end(), 0LL);  //0为 long long，  只写0为int，累加会越界
+		int p = k % sum; //
+		int index = -1;
+		for (int i = 0; i < chalk.size(); ++i) {
+			if (p - chalk[i] >= 0) {
+				p -= chalk[i];
+			}
+			else {
+				index = i;
+				break;
+			}
+		}
+		return index;
+	}
+};
+
+
+//1857. 有向图中最大颜色值
+/*
+路径的 颜色值 是路径中 出现次数最多 颜色的节点数目。
+请你返回给定图中有效路径里面的 最大颜色值
+colors[i] 是小写英文字母
+edges[j] = [aj, bj] 表示从节点 aj 到节点 bj 有一条 有向边 。
+*/
+// 拓扑排序判断图中是否有环， bfs统计最大颜色数
+int largestPathValue(string colors, vector<vector<int>>& edges) { //n == colors.length   m == edges.length  =》n个结点，m条边
+	int node_size = colors.size();
+	//邻接表
+	vector<vector<int>> Graph(node_size);
+	//入度
+	vector<int> indeg(node_size,0);
+
+	for (auto edge : edges) {
+		Graph[edge[0]].push_back(edge[1]);
+		indeg[edge[1]]++;
+	}
+	//初始化拓扑排序结点
+	stack<int> st;
+	for (int i = 0; i < node_size; ++i) {
+		if (!indeg[i]) {
+			st.push(i); // 入度为0
+		}
+	}
+
+
+	int node_found = 0;  //node_found !=node_size  有环
+	vector<vector<int>> color_rec(node_size, vector<int>(26));
+	while (!st.empty()) {
+		node_found++;
+		int p = st.top();
+		st.pop();
+		color_rec[p][colors[p] - 'a']++;
+		//开始bfs p的所有后继节点q并统计颜色数目
+		for (auto q : Graph[p]) {
+			--indeg[q]; //入度减1
+			for (int i = 0; i < 26; ++i) {
+				color_rec[q][i] = max(color_rec[p][i], color_rec[q][i]); //更新后继结点的路径颜色最大值
+			}
+			if (!indeg[q]) { //in==0 ?
+				st.push(q);
+			}
+		}
+	}
+	if (node_found != node_size) {
+		return -1;
+	}
+	int ans = 0;
+	for (int i = 0; i < node_size; ++i) {
+		ans = max(ans, *max_element(color_rec[i].begin(), color_rec[i].end()));
+	}
+	return ans;
+}
+
+//==================================================石子游戏=======================================
+class Stone {
+public:
+//877. 石子游戏
+bool stoneGame(vector<int>& piles) {
+	//pair<先手拿能获得的最大分数，后手拿能获得的最大分数>
+	int n = piles.size();
+	vector<vector<PII>> dp(n, vector<PII>(n));
+	//初始化dp
+	for (int i = 0; i < n; ++i) {
+		dp[i][i] = { piles[i], 0 };
+	}
+
+	for (int i = n - 2; i >= 0; --i) {
+		for (int j = i + 1; j < n; ++j) {
+			//先手选择左边或者右边，可以获得的分数
+			int left = piles[i] + dp[i + 1][j].second;  //先拿了最左侧的i，那么只能获得[i+1][j]后手的分数
+			int right = piles[j] + dp[i][j - 1].second;
+			
+			//先手肯定会选取最大的
+			if (left > right) {
+				dp[i][j].first = left;
+				dp[i][j].second = dp[i + 1][j].first;
+			}
+			else {
+				dp[i][j].first = right;
+				dp[i][j].second = dp[i][j-1].first;
+			}
+		}
+	}
+	return max(dp[0][n - 1].first,dp[0][n-1].second);
+}
+
+bool stoneGame1_1(vector<int>& piles) {
+	//dp[i][j]表示在[i,j]范围，拿石头，先手拿与后手拿的差值
+	int n = piles.size();
+	vector<vector<int>> dp(n, vector<int>(n));
+	//初始化dp
+	for (int i = 0; i < n; ++i) {
+		dp[i][i] = piles[i];
+	}
+	//更新dp
+	for (int i = n - 2; i >= 0; ++i) {
+		for (int j = i + 1; j < n; ++j) {
+			dp[i][j] = max(piles[i] - dp[i + 1][j], piles[j] - dp[i][j - 1]);
+			//当前的一方，拿走左侧石头i 或者 拿走右侧石头j ， 另一方在剩下石头里选取最优解
+		}
+	}
+	return dp[0][n - 1] > 0;
+}
+
+};
+
+
+//1895. 最大的幻方
+//预先处理每行、每列的前缀和（将对角线的处理放到遍历中
+int largestMagicSquare(vector<vector<int>>& grid) {
+	//嗯算
+	int m = grid.size(); //行
+	int n = grid[0].size(); //列
+	vector<vector<int>> pre_sum_row(m, vector<int>(n));  //行前缀和
+	vector<vector<int>> pre_sum_col(m, vector<int>(n)); //列前缀和
+
+	for (int i = 0; i < m; ++i) {
+		pre_sum_row[i][0] = grid[i][0];
+		for (int j = 1; j < n; ++j) {
+			pre_sum_row[i][j] = pre_sum_row[i][j - 1] + grid[i][j];
+		}
+	}
+	for (int j = 0; j < n; ++j) { //列
+		pre_sum_col[0][j] = grid[0][j];
+		for (int i = 1; i < m; ++i) { //行
+			pre_sum_col[i][j] = pre_sum_col[i - 1][j] + grid[i][j];
+		}
+	}
+
+	int edge_size = min(m, n);//最大的边长
+	for (int i = 2; i <= edge_size; i++) {
+		for (int j = 0; j + i <= m; ++j) {
+			for (int k = 0; k + i <= n; ++k) { //枚举左上角(j,k)
+				//计算第一行的和
+				int reference_value = pre_sum_row[j][k + i - 1] - (k ? pre_sum_row[j][k-1] : 0);
+				bool flag = false;
+				//验证后续行，与第一行做比对
+				for (int jj = j + 1; jj < j + i; ++jj) {
+					int temp_sum = pre_sum_row[jj][k + i - 1] - (k ? pre_sum_row[jj][k-1] : 0);
+					if (temp_sum != reference_value) {
+						flag = true;
+						break;
+					}
+				}
+				if (flag) {
+					continue;
+				}
+				//验证每一列是否和第一行的和相等
+				for (int kk = k; kk < k + i; kk++) {
+					int temp_sum = pre_sum_col[j + i - 1][kk] - (j ? pre_sum_col[j-1][kk] : 0);
+					if (temp_sum != reference_value) {
+						flag = true;
+						break;
+					}
+				}
+				if (flag) {
+					continue;
+				}
+
+				//验证对角线
+				int diag_temp_sum = 0, diag_temp_sum2 = 0;
+				for (int c = 0; c < i; ++c) {
+					diag_temp_sum += grid[j + c][k + c];
+					diag_temp_sum2 += grid[j + c][k + i - 1 - c];
+				}
+				if (diag_temp_sum == reference_value && diag_temp_sum2 == reference_value) {
+					return i;
+				}
+			}
+		}
+	}
+	return 1;
+}
+
+//65. 有效数字
+bool isNumber(string s) {
+	int n = s.size();
+	bool dot_flag = false; //.只能出现一次，因此要做标记
+	for (int i = 0; i < n; ++i) {
+		if (s[i] == '+' || s[i] == '-') {
+			if (!((i < n - 1) && (s[i+1] - '0' >= 0 && s[i+1] - '0' <= 9) || s[i + 1] == '.')) { //+ - 号后为 数字 或者 .
+				return false;
+			}
+		}
+		else if (s[i] - '0' >= 0 && s[i] - '0' <= 9) { //为数字
+			if (i < n - 1 && (s[i + 1] == '+' || s[i + 1] == '-')) {//数字后面不能跟+ 或 -
+				return false;
+			}
+		}
+		else if (s[i] == '.') { //遇到了.
+	   //.的前或后必须有一个数字 ， 同时.也不应该出现两次
+			if (!((i > 0 && s[i-1] - '0' >= 0 && s[i-1] - '0' <= 9) || (i < n - 1 && s[i + 1] - '0' >= 0 && s[i +1] - '0' <= 9)) || dot_flag) {
+				return false;
+			}
+			dot_flag = true;
+		}
+		else if (s[i] == 'e' || s[i] == 'E') { //为e或者E 。 E/e的后面不能有小数
+			if (i == 0 || i == n - 1) {
+				return false;
+			}
+			else {
+				for (int j = i + 1; j < n; ++j) {
+					if ((s[j] == '+' || s[j] == '-') && !(j == i + 1 && j != n - 1)) {
+						return false;
+					}
+					if ((s[j] == '.') || (s[j] - 'a' >= 0 && s[j] - 'a' < 26) || (s[j] - 'A' >= 0 && s[j] - 'A' < 26)) {
+						return false;
+					}
+				} //遍历结束
+				break;
+			}
+
+		}
+		else {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+//65. 有效数字
+//有限状态机
+class Legal_Number {
+public:
+	enum State { //枚举出所有状态
+		STATE_INITIAL,
+		STATE_INT_SIGN,
+		STATE_INTEGER,
+		STATE_POINT,
+		STATE_POINT_WITHOUT_INT,
+		STATE_POINT_FRACTION,  //小数部分
+		STATE_EXP,
+		STATE_EXP_SIGN,
+		STATE_EXP_INT,
+		STATE_END
+	};
+
+	enum CharType {
+		CHAR_NUMBER,
+		CHAR_SIGN,
+		CHAR_POINT,
+		CHAR_EXP,
+		CHAR_ILLEGAL
+	};
+
+	CharType toCharType(char ch) { //string[i]->const char
+		if (ch >= '0' && ch <= '9') {
+			return CHAR_NUMBER;
+		}
+		else if (ch == '+' || ch == '-') {
+			return CHAR_SIGN;
+		}
+		else if (ch == 'e' || ch == 'E') {
+			return CHAR_EXP;
+		}
+		else if (ch == '.') {
+			return CHAR_POINT;
+		}
+		else {
+			return CHAR_ILLEGAL;
+		}
+	}
+
+	bool isNumber(string s) {
+		unordered_map<State, unordered_map<CharType, State>> transfer{
+			//状态->数据类型->下一个状态
+			//根据状态机的图来推导
+			{
+				STATE_INITIAL,{
+					{CHAR_SIGN,STATE_INT_SIGN},
+					{CHAR_POINT,STATE_POINT_WITHOUT_INT},
+					{CHAR_NUMBER,STATE_INTEGER}
+				}
+			},
+			{
+				STATE_INT_SIGN,{
+					{CHAR_NUMBER,STATE_INTEGER},
+					{CHAR_POINT,STATE_POINT_WITHOUT_INT}
+				}
+			},
+			{
+				STATE_POINT_WITHOUT_INT,{
+					{CHAR_NUMBER,STATE_POINT_FRACTION}
+				}
+			},
+			{
+				STATE_INTEGER,{
+					{CHAR_NUMBER,STATE_INTEGER},
+					{CHAR_EXP,STATE_EXP},
+					{CHAR_POINT,STATE_POINT}
+				}
+			},
+			{
+				STATE_EXP,{
+					{CHAR_NUMBER,STATE_EXP_INT},
+					{CHAR_SIGN,STATE_EXP_SIGN}
+				}
+			},
+			{
+				STATE_POINT,{
+					{CHAR_NUMBER,STATE_POINT_FRACTION},
+					{CHAR_EXP,STATE_EXP}
+				}
+			},
+			{
+				STATE_EXP_INT,{
+					{CHAR_NUMBER,STATE_EXP_INT}
+				}
+			},
+			{
+				STATE_EXP_SIGN,{
+					{CHAR_NUMBER,STATE_EXP_INT}
+				}
+			},
+			{
+				STATE_POINT_FRACTION,{
+					{CHAR_NUMBER,STATE_POINT_FRACTION},
+					{CHAR_EXP,STATE_EXP}
+				}
+			}
+		};
+
+		int n = s.size();
+		State st = STATE_INITIAL;
+		for (int i = 0; i < n; ++i) {
+			if (transfer[st].find(toCharType(s[i])) != transfer[st].end()) {
+				st = transfer[st][toCharType(s[i])];
+			}
+			else {
+				return false;
+			}
+		}
+		return st == STATE_INTEGER || st == STATE_POINT || 
+			   st == STATE_POINT_FRACTION || st == STATE_EXP_INT || st == STATE_END || st == STATE_INT_SIGN;
+	}
+};
+
+
+
+
+//483. 最小好进制
+using LL = long long;
+int check(LL max_length, LL mid, LL N) {  //最大长度，当前进制，目标值
+	LL sum = 0;
+	for (int i = 0; i < max_length; ++i) {
+		if (sum > (N - 1) / mid) {  //防止溢出
+			return 1;
+		}
+		sum = sum * mid + 1;
+	}
+	if (sum == N) {
+		return 0;
+	}
+	return sum > N ? 1 : -1;
+}
+
+string smallestGoodBase(string n) {
+	//设数字n转化为a进制后全1
+	//可以得到，n=a^0+a^1+...+a^(length(n)-1)
+	//因为k>=2， 所以可以得到，全1的最大长度为log2(n)+2
+	//穷举最大长度，二分合适每次长度的最小进制
+	LL N = stoll(n);
+	int max_length = (int)(log(N) / log(2) + 1); //转换为其他进制的最大长度
+
+	for (int i = max_length; i >= 3; --i) {
+		LL l = 2, r = N-1;	//找进制
+		while (l <= r) {
+			LL mid = l + (r - l) / 2;
+			if (check(i, mid, N)>=0) {
+				//减小进制
+				r = mid - 1;
+			}
+			else {
+				l = mid + 1;
+			}
+		}
+		//验证是否等于
+		if (check(i, l, N) == 0) {
+			return to_string(l);
+		}
+	}
+	return to_string(N - 1);
+}
+
+
+//1239. 串联字符串的最大长度
+class StrLength {
+private:
+	int max_l;
+public:
+	int backtrack(vector<string>& arr, vector<int>& cnt, int index) {
+		if (index == arr.size()) {
+			return 0;
+		}
+		vector<int> temp = cnt;  //保存当前值，留给下次不选当前位置用
+		for (auto a : arr[index]) {
+			if (cnt[a - 'a']>0) {
+				return backtrack(arr, temp, index + 1);
+			}
+			else {
+				cnt[a - 'a']++; //出现			
+			}
+		}
+
+
+		return max(backtrack(arr, temp, index + 1), (backtrack(arr, cnt, index + 1) + (int)arr[index].size()));
+		
+	}
+
+	int maxLength(vector<string>& arr) {
+		vector<int> cnt(26,0);
+		int ans = backtrack(arr,cnt,0);
+		return ans;
+	}
+
+
+	//不使用哈希表
+	//使用二进制表示法来判断是否有重复数字
+	int maxLength_1(vector<string>& arr) {
+		vector<int> unique_subarr;
+		//筛选出没有重复字母的子串
+		for (auto& a : arr) {
+			int m = 0;
+			for (auto b : a) {
+				//看m中是否包含重复字符串
+				if ((m >> (b - 'a')) & 1) {
+					m = 0; 
+					break;
+				}
+				else {
+					m |= (1 << (b - 'a'));
+				}
+			}
+			if (m > 0) {
+				unique_subarr.push_back(m);
+			}
+		}
+
+		int ans = 0;
+		//对本身没有重复字符串的子串进行匹配
+		//[captures] (params) mutable-> type{...} //lambda 表达式的完整形式
+		std::function<void(int, int)> backtrack = [&](int index, int rec) {  // index表示当前位置, rec记录字符使用情况便于判重
+			if (index == (int)unique_subarr.size()) { //边界条件
+				ans = max(ans, (int)__builtin_popcount(rec));
+				return;
+			}
+			//选
+			if ((unique_subarr[index] & rec) == 0) { //=0表示无重复元素
+				backtrack(index + 1, rec | unique_subarr[index]);
+			}
+			//不选
+			backtrack(index + 1, rec);
+		};
+		
+		backtrack(0, 0);
+		return ans;
+	}
+
+};
+
+
+class BinaryWatch {
+private:
+	vector<string> ans;
+public:
+	string transfer(int num) {
+		int hour = (num & 0b1111000000)>>6;
+		int minute = (num & 0b111111);
+		if (hour >= 12) {
+			return "";
+		}
+		if (minute >= 60) {
+			return "";
+		}
+
+		string time;
+		time += to_string(hour);
+		if (minute < 10) {
+			time += ":0";
+			time += to_string(minute);
+		}
+		else {
+			time += ":";
+			time += to_string(minute);
+		}
+		return time;
+	}
+
+	void backtrack(int choose, int index, int length, int allDigit) {
+		if (length == 0) {
+			string temp = transfer(choose);
+			if (temp != "") {
+				ans.push_back(temp);
+			}
+			return;
+		}
+		
+		if (allDigit - index<length) {
+			return;
+		}
+
+		//不选与选
+		backtrack(choose, index + 1, length, allDigit);
+		choose |= (1 << index);
+		backtrack(choose, index + 1, length-1, allDigit);
+		return;
+	}
+
+	vector<string> readBinaryWatch(int turnedOn) { //hour 0-11  minute 0-59
+		//turnedOn表示亮灯的个数
+		//vector<int> vec = { 1,2,4,8,1,2,4,8,16,32 };
+		if (turnedOn > 8) {
+			return ans;
+		}
+		backtrack(0, 0, turnedOn, 10);
+		return ans;
+	}
+};
+
+
+// 剑指 Offer 38. 字符串的排列
+class Perms {
+private:
+	vector<string> ans;
+	vector<int> visited;
+public:
+	void backtrack(string& s, int index, int n, string& temp) {
+		if (index == n) {
+			ans.emplace_back(temp);
+			return;
+		}
+
+		for (int i = 0; i < n; ++i) {
+			if (visited[i] || (i > 0 && visited[i - 1] && s[i] == s[i - 1])) {  //当前位置计算过，或者当前位置和前一个数位置一样
+				continue;
+			}
+			visited[i] = 1;
+			temp.push_back(s[i]);
+			backtrack(s, index + 1, n, temp);
+			temp.pop_back();
+			visited[i] = 0;
+		}
+	}
+
+	vector<string> permutation(string s) {
+		int n = s.size();
+		visited.resize(n, 0);
+		string temp = "";
+		sort(s.begin(), s.end());  //将字符串排序后，相同的字符都相邻，为了去除重复的情况，每种重复字符，只计算最左侧出现的一个
+		backtrack(s, 0, n, temp);
+		return ans;
+	}
+};
+
+
+//31. 下一个排列
+void nextPermutation(vector<int>& nums) {
+
+	//=====此块测试STL函数 std::next_permutation
+	vector<int> temp = { 1,2,3 };
+	do {
+		for (auto a : temp) {
+			cout << a << "\t";
+		}
+		cout << endl;
+	} while (std::next_permutation(temp.begin(),temp.end()));
+
+	int temp2[] = { 1,2,3 };
+	do {
+		cout << temp2[0] << "\t" << temp2[1] << "\t" << temp2[2] << endl;
+	} while (next_permutation(temp2, temp2 + 3));
+	//===========================================
+
+	int n = nums.size();
+	int first_less = nums.size() - 1;
+	int first_large = nums.size() - 1;
+	while (first_less > 0 && nums[first_less] <= nums[first_less - 1]) {
+		first_less--;
+	}
+	if (first_less >= 1) {  //当序列为5 4 3 2 1   first_less为0
+		while (first_large >= first_less && nums[first_large] <= nums[first_less - 1]) {
+			first_large--;
+		}
+		swap(nums[first_large], nums[first_less-1]);
+		//swap很重要，当顺序为1 2 3 4 5 ， swap直接调整为1 2 3 5 4
+		//解决初始问题
+	}
+	reverse(nums.begin() + first_less, nums.end());
+}
 
 /**/
 int main() {
 	//clock_t start, end;
 	//start = clock();
 
+	//vector<int> weight = { 3,4,5,3,6 };
+	//vector<int> value = { 4,5,6,3,5 };
+
+	//bagProblemcomp(weight, value, 5, 10);
+
+
+	//numSquares(12);
+
+
+	//vector<int> piles = { 5,3,4,5 };
+	//Stone sto;
+	//sto.stoneGame(piles);
 
 
 
 
 
 
-
-
-	//end = clock();
-	//cout << (double)(end - start) / CLOCKS_PER_SEC << endl;
-	return 0;
+return 0;
 }
+
+
+
+	//vector<int>nums = { 1,5,1 };
+	//nextPermutation(nums);
+
+	//Perms pe;
+	//string s = "abc";
+	//pe.permutation(s);
+
+	//BinaryWatch bw;
+	//bw.readBinaryWatch(7);
+
+	////vector<string> arr = { "abcdefghijklm", "bcdefghijklmn", "cdefghijklmno", "defghijklmnop", "efghijklmnopq", "fghijklmnopqr", "ghijklmnopqrs", "hijklmnopqrst", "ijklmnopqrstu", "jklmnopqrstuv", "klmnopqrstuvw", "lmnopqrstuvwx", "mnopqrstuvwxy", "nopqrstuvwxyz", "opqrstuvwxyza", "pqrstuvwxyzab" };
+	//StrLength sl;
+	//sl.maxLength_1(arr);
+
+
+	//string s = "1000000000000000000";
+	//smallestGoodBase(s);
+
+	//string s = "3.";
+	//Legal_Number ln;
+	//ln.isNumber(s);
+
+
+	//vector<vector<int>> matrix = { {8,1, 6},{3,5,7},{4,9,2},{7,10,9} };
+	//largestMagicSquare(matrix);
+
+
+	//vector<vector<int>> node = { {0, 1},{0, 2},{2, 3},{3, 4} };
+	//largestPathValue("abaca", node);
+
+	//vector<int> cost = { 2,4,6,2,4,6,4,4,4 };
+	//int target = 5;
+	//largestNumber(cost, target);
+
+
+	//int amount = 5;
+	//vector<int> coins = { 1,2,5 };
+	//change(amount, coins);
+
+	//int n = 10, minProfit = 5;
+	//vector<int> group = { 2, 3, 5 }, profit = { 6, 7, 8 };
+	//profitableSchemes(n, minProfit, group, profit);
+
+	//minFlips("11100");
+
+	//vector<string> strs = { "10", "0001", "111001", "1", "0" };
+	//findMaxForm(strs, 5, 3);
+
+	//vector<int> nums = { 5,1,3 };
+	//reductionOperations(nums);
+
+	//vector<int> stones = { 1,1,4,2,2 };
+	//lastStoneWeightII(stones);
+
+	//targetsum tg;
+	//vector<int> nums{ 1,1,1,1,1 };
+	//tg.findTargetSumWays_dp(nums, 3);
+
+	//vector<int> nums = { 23,2,4,6,6 };
+	//int k = 7;
+	//checkSubarraySum(nums, k);
+
+
+
+	//vector<int> nums = { 0,1,0,1,0,1 };
+	//findMaxLength(nums);
+
+	//vector<int> servers = { 74,57,61,82,67,97,67,21,61,79,21,50,14,88,48,52,76,64 }, tasks = { 21,100,48,64,20,8,28,10,3,63,7 };
+	//TasksProcessing tp;
+	//tp.assignTasks(servers,tasks);
+
+
+	//vector<int> nums = { 4,14,2 };
+	//totalHammingDistance(nums);
+
+
+	//vector<int> nums = { 1,2,3 };
+	//Combination_Sum cb;
+	//cb.combinationSum4_2(nums, 4);
+
+
+	//vector<int> nums = { 1,2,3,4 };
+	//productExceptSelf(nums);
+
+	//string s = "010010"; 
+	//int minJump = 2, maxJump = 3;
+	//canReach(s, minJump, maxJump);
+
+	//string s = "(ed(et(oc))el)";
+	//reverseParentheses(s);
+
+
+	//string s = "aaabbb";
+	//strangePrinter(s);
+
+	//string s = "111000";
+	//checkZeroOnes(s);
+
+	//vector<int> a = { 1,1,100000 };
+	//double hours = 2.01;
+	//minSpeedOnTime(a, hours);
+
+	//vector<int> nums1 = { 1,4,2 };
+	//vector<int> nums2 = { 1,2,4 };
+	//maxUncrossedLines(nums1, nums2);
+
+/*
+	auto cmp = [](const auto& a, const auto& b) {
+		return a > b;
+	};
+	priority_queue< int, vector<int>, decltype(cmp)> que(cmp);  
+	//优先队列的排序函数是反着来的，定义的return a>b,但是却是小根堆
+	
+	vector<int> nums = { 1,6,8,9,3,54,6,8,9,3,2 };
+	for (auto a : nums) {
+		que.push(a);
+	}*/
+
+
+	
+	//vector<string> words = { "i", "love", "leetcode", "i", "love", "coding" };
+	//int k = 2;
+	//topKFrequent(words,k);
+
+
+	//vector<int> nums = { 3,2,1,5,6,4 };
+	//quickSelect qs;
+	//qs.findKthLargest(nums,4);
+
+	//vector<int> nums = { 2,3,1,6,7 };
+	//countTriplets(nums);
+
+
+	//vector<int> nums = { 3, 10, 5, 25, 2, 8 };
+	//findMaximumXOR(nums);
+
+	//rearrangeSticks(5, 4);
+
+
+	//string s = "010";
+	//minSwaps(s);
+
+	//vector<int> nums = { 5,1,6 };
+	//subsetXORSum(nums);
+
+
+	//vector<vector<string>>box = { {"#", "#", "*", ".", "*", "."},
+		//{"#", "#", "#", "*", ".", "." },
+		//{"#", "#", "#", ".", "#", "."} };
+
+	//rotateTheBox(box);
+
+	//vector<int> g = { 8,5,2,9,1 };
+	//vector<int> s = { 0,0,0,0,0 };
+	//findContentChildren(g, s);
+
+
+	//vector<int> nums = { 1,1,3,6,8 };
+	//minOperations(nums);
+
+	//string s = "-43";
+	//myAtoi(s);
 
 
 	//string s1 = "great", s2 = "rgeat";

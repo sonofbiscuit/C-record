@@ -47,6 +47,7 @@ sort(edges.begin(), edges.end(), [](const auto& e1, const auto& e2) {
 	return x3 < y3;
 });*/
 
+
 /*
 //sort内置函数
 less<type>()    //从小到大排序 <
@@ -54,6 +55,8 @@ grater<type>()  //从大到小排序 >
 less_equal<type>()  //  <=
 gtater_equal<type>()//  >=
 */
+
+
 /*
 ======string to int======
 //实现任意类型的转换
@@ -89,6 +92,50 @@ upper_bound( begin,end,num)：从数组的begin位置到end-1位置二分查找第一个大于num的
 
 */
 
+
+/*
+C++中强制类型转换操作符有static_cast、dynamic_cast、const_cast、reinterpert_cast四个
+static_cast<int>(x) 作用等同于 (int)x
+dynamic_cast是将一个基类对象指针（或引用）转换到继承类指针，dynamic_cast会根据基类指针是否真正指向继承类指针来做相应处理。
+
+
+static_cast 也能进行指针的转换， 比如基类和派生类
+
+
+把派生类的指针或引用转换成基类表示，称之为上行转换。
+把基类指针或引用转换成派生类表示，称之为下行转换。
+
+在类层次间进行上行转换时，dynamic_cast和static_cast的效果是一样的；
+在进行下行转换时，dynamic_cast具有类型检查的功能，比static_cast更安全。
+
+例子：
+class B{
+public:
+	int m_iNum;
+	virtual void foo();
+}
+
+class D:public B{
+public:
+	char* m_szName[100];
+}
+ void func(){
+	D* pd1 = static_cast<D*>(pd);
+	D* pd2 = dynamic_cast<D*>(pd);
+ }
+
+  如果pd指向的是派生类D， 那么pd1和pd2是一样的
+  如果pd指向的是基类B，那么pd1将是一个指向该对象的指针，pd2将是一个空指针
+
+  对于对于dynamic_cast的转换， 基类（父类）中必须要定义一个虚函数，不然会报错。
+  虚函数不仅仅是实现多态性的一个重要标志，同时也是dynamic_cast转换能够进行的前提条件。
+   
+*/
+
+
+
+
+
 //双端队列实现单调队列 ,  自带priority_queue<>
 //priority_queue<int, vector<int>, greater<int> > que; //顶部为最小值
 //priority_queue<int> que;   顶部为最大值
@@ -116,7 +163,7 @@ public:
 };
 
 
-//============================排序==========================================
+//============================随机化快速排序==========================================
 //随机化版本的快排
 int partion(vector<int>& vec, int low, int high) {
 	if (low >= high) {
@@ -145,9 +192,56 @@ void quicksort(vector<int>& vec, int low, int high) {
 	partion(vec, pivot + 1, high);
 }
 
+//============================快速选择==========================================
+//快速选择算法
+class quickSelect {
+public:
+	int findKthLargest(vector<int>& nums, int k) {
+		int n = nums.size();
+		return quickselect(nums, 0, n - 1, n - k);
+	}
+
+	//quickselect判断下标
+	//random 产生随即下标
+	//partion分离，进行每次子排序
+	int quickselect(vector<int>& nums, int low, int high, int k) {
+		int r_index = random_index(low, high);
+		swap(nums[r_index], nums[high]);
+		int proper_index = partion(nums, low, high);
+		if (proper_index == k) {
+			cout << nums[proper_index];
+			return nums[proper_index];
+		}
+		else if (proper_index < k) {
+			quickselect(nums, proper_index + 1, high, k);
+		}
+		else {
+			quickselect(nums, low, proper_index - 1, k);
+		}
+
+	}
+
+	int random_index(int left, int right) {
+		return rand() % (right - left + 1) + left; //generate index between left and right
+	}
+
+	int partion(vector<int>& nums, int left, int right) {
+		int i = left - 1;
+		for (int j = left; j < right; ++j) {
+			if (nums[j] <= nums[right]) {
+				swap(nums[++i], nums[j]); //很巧妙
+			}
+		}
+		swap(nums[right], nums[i + 1]);
+		return i + 1;
+	}
+
+};
 
 
-//============================并查集==================================================
+
+
+//======================================并查集==================================================
 
 //初始化
 int fa[100];
@@ -212,6 +306,133 @@ inline void merge1(int i, int j) {
 }
 
 
+//================================二叉搜索树==================================================
+template<typename V>
+struct BSTNode {
+	BSTNode* _lchild;
+	BSTNode* _rchild;
+	V val;
+
+	BSTNode(const V& value)
+		: _lchild(nullptr),
+		_rchild(nullptr),
+		val(value) {}
+
+};
+
+template<typename V>
+class BST {
+typedef BSTNode<V> node;
+private:
+	node* _root;
+public:
+	
+
+	BST() :_root(nullptr) {}
+
+	//查找
+	node* find(V value) {
+		return _find(_root, value);
+	}
+
+	node* _find(node* root, const V& value) {
+		if (root == nullptr) {
+			return nullptr;
+		}
+		if (root->val > value) {
+			return _find(root->_lchild, value);
+		}
+		else if (root->val < value) {
+			return _find(root->_rchild, value);  
+		}
+		else {
+			return root;
+		}
+	}
+
+	//插入
+	bool insert(V value) {
+		return _insert(_root, value);
+	}
+
+	bool _insert(node* root, const V& value) {
+		if (root == nullptr) {
+			root = new BSTNode(value);
+			return true;
+		}
+
+		if (root->val > value) {
+			_insert(root->_lchild, value);
+		}
+		else if (root->val < value) {
+			_insert(root->_rchild, value);
+		}
+		else {
+			return false;
+		}
+	}
+
+	//删除
+	bool delete_node(V value) {
+		return _delete(_root, value);
+	}
+
+	bool _delete(node* root, const V& value) {
+		if (root == nullptr) {
+			return false;
+		}
+		if (root->_lchild == nullptr && root->_rchild == nullptr) { // 只有root
+			root == nullptr;
+			return true;
+		}
+
+		if (root->val > value) {
+			return _delete(root->_lchild, value);
+		}
+		else if (root->value < value) {
+			return _delete(root->_rchild, value);
+		}
+		else { //equal
+			node* temp = nullptr;
+			if (root->_lchild == nullptr && root->_rchild == nullptr) { //删除节点为叶子节点
+				delete root;
+				root == nullptr;
+				return true;
+			}
+			else if (root->_lchild == nullptr) { //带有右孩子的结点
+				temp = root;
+				root = root->_rchild;
+				delete(temp);
+				temp = nullptr;
+				return true;
+			}
+			else if (root->_rchild == nullptr) { //带有左孩子的结点
+				temp = root;
+				root = root->_lchild;
+				delete(temp);
+				temp = nullptr;
+				return true;
+			}
+			else { //左右节点均不为空
+				node* right_first;
+				right_first = root->_rchild;
+				while (right_first->_rchild) {
+					right_first = right_first->_lchild;
+				}
+				//已经到达了最左的结点
+				swap(root->val, right_first->val);
+				_delete(root->_rchild, value);
+				return true;
+			}
+		}
+	}
+
+};
+
+
+
+
+
 //================================平衡二叉树==================================================
 //multiset内部实现为平衡二叉树
 
@@ -223,7 +444,9 @@ inline void merge1(int i, int j) {
 
 
 
-//哈希表 hashset,仅仅存储对象
+
+
+//========================================哈希表 hashset,仅仅存储对象============================
 //此处使用链地址法，基准质数取1023
 
 class MyHashSet {
@@ -267,7 +490,7 @@ public:
 };
 
 
-//HashMap,存储的键值对
+//===============================================HashMap,存储的键值对========================================
 class MyHashMap {
 private:
 	vector<list<pair<int, int>>> myHash;
@@ -374,4 +597,167 @@ public:
  */
 
 
+//==========================================小根堆、小顶堆========================================================
+template<typename T>
+class minHeap {
+private:
+	T* heap;
+	int currentSize; //当前堆中的元素数量
+	int maxSize; //所允许的最大元素数
+	static const int default_size = 30;
 
+public:
+	//初始化一个空堆
+	minHeap(int sz = default_size) {
+		maxSize = (sz >= default_size) ? sz : default_size;
+		heap = new T[maxSize];
+		currentSize = 0;
+	}
+	// 构造函数，通过一个数组建立堆
+	minHeap(T arr[]) {
+		int n = length(arr);
+		maxSize = (default_size < n) ? n : default_size;
+		heap = new T[maxSize];
+		for (int i = 0; i < n; ++i) {
+			heap[i] = arr[i]; //初始化
+		}
+		currentSize = n;
+		int current_pos = (currentSize - 2) / 2;
+		while (current_pos) {
+			adjustDown(current_pos, currentSize - 1);
+			current_pos--; //逐步向前
+		}
+		//找初始位置。
+	}
+
+	//插入
+	bool insert(const T& x) {
+		if (currentSize == maxSize) {
+			cout << "heap full" << endl;
+
+		}
+		heap[currentSize] = x; //插入到最后一个位置
+		adjustUp(currentSize);
+		currentSize++;
+		return true;
+	}
+
+	//移除
+	bool removeMin() {
+		if (currentSize == 0) {
+			cout << "heap empty" << endl;
+			return false;
+		}
+		T x = heap[0];
+		heap[0] = heap[currentSize - 1];
+		currentSize--;
+		adjustDown(0, currentSize - 1);
+		return true;
+	}
+
+	void output()
+	{
+		for (int i = 0; i < currentSize; i++)
+		{
+			cout << heap[i] << " ";
+		}
+		cout << endl;
+	}
+
+	//向下调整法
+	void adjustDown(int start, int end) {
+		int cur = start;
+		int min_child = 2 * cur + 1; //取左孩子
+		T temp_root = heap[cur]; //取当前孩子的父结点，为start处的结点
+		while (min_child <= end) {//没到最后一个结点
+			if (min_child<end && heap[min_child] > heap[min_child + 1]) {
+				//找出左右孩子结点的最小的一个结点
+				min_child++; //右节点比左节点小，则变到右节点
+			}
+			if (heap[min_child] >= temp_root) {
+				//满足父结点小于最小的子节点
+				return;
+			}
+			else { //不满足,那么得交换
+				heap[cur] = heap[min_child]; //子节点上移到父结点位置
+				cur = min_child; //cur下移到子节点的位置
+				min_child = min_child * 2 + 1; //找下面的子节点
+			}
+		}
+		//找到 temp_root的正确位置
+		heap[cur] = temp_root;
+	}
+
+
+	//向上调整法
+	//从start到0，调整为最小堆
+	void adjustUp(int start) { //找到存放temp的合适位置
+		int cur = start;
+		int cur_parent = (cur - 1) / 2;
+		T temp = heap[cur];
+		while (cur > 0) {
+			if (temp > heap[cur_parent]) {
+				break;
+			}
+			else { //不满足小顶堆的性质,开始交换
+				heap[cur] = heap[cur_parent];
+				cur = cur_parent; //上移
+				cur_parent = (cur_parent - 1) / 2;
+			}
+		}
+		//跳出while的条件，cur==0 或者 temp > heap[cur_parent]
+		//当 temp>heap[cur_parent]时，cur处是没有更新的
+		heap[cur] = temp;
+	}
+};
+
+/*
+调用
+minHeap<int> h;
+	h.insert(8);
+	h.insert(5);
+	h.insert(7);
+	h.insert(9);
+	h.insert(6);
+	h.insert(12);
+	h.insert(15);
+	h.output();
+
+	int out;
+	cout << static_cast<int> (h.RemoveMin(out)) << endl;
+	h.output();
+
+	int arr[10] = { 15,19,13,12,18,14,10,17,20,11 };
+	MinHeap<int> h1(arr,10);
+	h1.output();
+*/
+
+
+//======================================================实现next_permutation==========================
+/* 31. 下一个排列
+比如有序列{1,2,3}
+那么下一个排列依次为
+			1 2 3
+			1 3 2
+			2 1 3
+			2 3 1
+			3 1 2
+			3 2 1
+next_permutation，就是每次找到一个大于当前序列的排列，且变大的幅度尽可能小  比如：1 2 3 =>> 1 3 2
+
+void nextPermutation(vector<int>& nums) {
+	int n = nums.size();
+	int first_less = nums.size()-1;
+	int first_large = nums.size()-1;
+	while (first_less > 0 && nums[first_less] > nums[first_less - 1]) {
+		first_less--;
+	}
+	if (first_less >= 1) {
+		while (first_large >= first_less && nums[first_large] < nums[first_less - 1]) {
+			first_large--;
+		}
+		swap(nums[first_large], nums[first_less]);
+	}
+	reverse(nums.begin() + first_less, nums.end());
+	
+}*/

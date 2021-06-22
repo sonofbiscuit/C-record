@@ -239,19 +239,19 @@ int maxEnvelopes1(vector<vector<int>>& envelopes) {
 
 
 //背包问题
+
 //0-1背包
-
-int bagProblem01(vector<int> weight, vector<int> value,int num, int capcity) {
-	vector<vector<int>> dp(num+1, vector<int>(capcity+1));
-
+int bagProblem01(vector<int> weight, vector<int> value, int num, int capcity) {
+	vector<vector<int>> dp(num + 1, vector<int>(capcity + 1));
+	//dp[i][j]表示将前i件物品装进限重为j的背包可以获得的最大价值
 	for (int i = 0; i <= num; ++i) { //num
 		for (int j = 0; j <= capcity; ++j) { //weight
 			if (i == 0 || j == 0) {
 				dp[i][j] = 0;
 			}
 			else {
-				if (j >= weight[i-1]) { //此时是可以装下物品i的
-					dp[i][j] = max(dp[i - 1][j], dp[i-1][j - weight[i-1]] + value[i-1]); //选物品i与不选物品i
+				if (j >= weight[i - 1]) { //此时是可以装下物品i的
+					dp[i][j] = max(dp[i - 1][j], dp[i - 1][j - weight[i - 1]] + value[i - 1]); //选物品i与不选物品i
 				}
 				else {
 					dp[i][j] = dp[i - 1][j];
@@ -262,7 +262,48 @@ int bagProblem01(vector<int> weight, vector<int> value,int num, int capcity) {
 	return dp[num][capcity];
 }
 
-//
+//完全背包问题
+
+//完全背包，
+//如果求组合数就是外层for循环遍历物品，内层for遍历背包。   <==有次序
+//如果求排列数就是外层for遍历背包，内层for循环遍历物品。   <==无次序
+
+//每种物品有无限多个，第i（i从1开始）种物品的重量为w[i]，价值为v[i].
+//在总重量不超过背包承载上限,能够装入背包的最大价值
+int bagProblemcomp1(vector<int> weight, vector<int> value, int num, int capcity) {
+	vector<vector<int>> dp(num + 1, vector<int>(capcity + 1)); //一共num件物品，背包容量为capcity
+	//dp[i][j]表示将前i件物品装进限重为j的背包可以获得的最大价值
+	for (int i = 1; i <= num; ++i) { //num
+		for (int j = 0; j <= capcity; ++j) { //weight
+			if (j >= weight[i - 1]) { //此时是可以装下物品i的
+				dp[i][j] = max(dp[i - 1][j], dp[i][j - weight[i - 1]] + value[i - 1]); 
+				//选物品i与不选物品i.物品i可以重复选取，因此选取时写dp[i][j - weight[i - 1]]而不是dp[i-1][j - weight[i - 1]]
+			}
+			else {
+				dp[i][j] = dp[i - 1][j];
+			}
+		}
+	}
+	return dp[num][capcity];
+}
+
+int bagProblemcomp1_1(vector<int> weight, vector<int> value, int num, int capcity) {
+	vector<vector<int>> dp(num + 1, vector<int>(capcity + 1)); //一共num件物品，背包容量为capcity
+	//dp[i][j]表示将前i件物品装进限重为j的背包可以获得的最大价值
+	for (int i = 1; i <= num; ++i) { //num
+		for (int j = 0; j <= capcity; ++j) { //weight
+			
+		}
+	}
+	return dp[num][capcity];
+}
+
+//多重背包问题
+
+
+
+
+//背包问题 恰好装满  、  利润至少为  、 求所有的方案  等等
 
 /*	
 int main() {

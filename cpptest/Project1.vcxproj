@@ -133,7 +133,7 @@
     <ClCompile Include="StlStringChange.cpp" />
     <ClCompile Include="StoneGames.cpp" />
     <ClCompile Include="UnionFind.cpp" />
-    <ClCompile Include="源.cpp" />
+    <ClCompile Include="rec.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StlStringChange.h" />
