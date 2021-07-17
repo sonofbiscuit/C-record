@@ -9,6 +9,7 @@
 #include <typeinfo>
 #include <stack>
 #include <queue>
+#include <array>
 #include <deque>
 #include <time.h>
 #include "StlStringChange.h"
@@ -24,7 +25,7 @@ using namespace strtool;
 using PII = pair<int, int>;
 
 
-//[captures] (params) mutable-> type{...} //lambda 表达式的完整形式
+//[captures] (params) mutable-> return-type{...} //lambda 表达式的完整形式
 
 
 /*
@@ -5179,6 +5180,772 @@ void nextPermutation(vector<int>& nums) {
 	reverse(nums.begin() + first_less, nums.end());
 }
 
+//1906. 查询差绝对值的最小值
+//   1 <= nums[i] <= 100
+vector<int> minDifference(vector<int>& nums, vector<vector<int>>& queries) {
+	//考虑一个数组中的差的最小值，当一个数组有序，那么相邻的两个数字有最小的差值
+	//使用pre_sum[i][j]表示在nums[0-i]中j出现的数目
+	int n = nums.size();
+	int max_num = 100;
+	vector<vector<int>> pre_sum(n + 1, vector<int>(101,0));
+
+	for (int i = 0; i < n; i++) {
+		copy_n(pre_sum[i].begin(), 101, pre_sum[i + 1].begin());
+		++pre_sum[i + 1][nums[i]];
+	}
+
+	int m = queries.size();
+	vector<int>ans;
+	for (int i = 0; i < m; ++i) {
+		int l = queries[i][0], r = queries[i][1];
+		int temp = INT_MAX;
+		int last_ele = 0;
+		for(int j=1;j<=100;++j){
+			if (pre_sum[r + 1][j] != pre_sum[l][j]) {
+				if (last_ele) {
+					temp = min(temp, j - last_ele);
+				}
+				last_ele = j;
+			}
+		}
+		if (temp == INT_MAX) {
+			temp = -1;
+		}
+		ans.emplace_back(temp);
+	}
+	return ans;
+}
+
+
+//1905. 统计子岛屿
+//dfs / bfs
+class ssss {
+private:
+	vector<vector<int>> move = { {0, -1}, {-1, 0}, {1, 0}, {0, 1} };
+	vector<vector<int>> visited;
+public:
+	void que_clear(queue<pair<int, int>>& que) {
+		queue<pair<int, int>> empty;
+		swap(que, empty);
+	}
+
+	int countSubIslands(vector<vector<int>>& grid1, vector<vector<int>>& grid2) {
+		int m = grid1.size(), n = grid1[0].size();
+		visited.resize(m, vector<int>(n));
+
+		int ans = 0;
+		for (int i = 0; i < m; ++i) {
+			for (int j = 0; j < n; ++j) {
+				if (visited[i][j] || grid2[i][j] == 0) {
+					continue;
+				}
+				visited[i][j] = 1;
+				queue<pair<int, int>> que;
+				que.push(make_pair(i, j));
+				int count = 1;
+
+				while (!que.empty()) {
+					auto temp = que.front();
+					que.pop();
+					if (grid1[temp.first][temp.second] == 0) {
+						count = 0;
+					}
+					for (int k = 0; k < 4; ++k) {
+						int new_x = temp.first + move[k][0];
+						int new_y = temp.second + move[k][1];
+						if (new_x < 0 || new_x >= m || new_y < 0 || new_y >= n || 
+							visited[new_x][new_y] == 1 || grid2[new_x][new_y]==0) {
+							continue;
+						}
+						visited[new_x][new_y] = 1;
+						que.push(make_pair(new_x, new_y));
+					}
+				}
+				ans += (count == 0 ? 0 : 1);
+			}
+		}
+		return ans;
+	}
+};
+
+//X-Y坐标系里，求最多有多少个点在同一条直线上。
+int gcd(int x, int y) {
+	return y == 0 ? x : (gcd(y, x % y));
+}
+
+int maxPoints(vector<vector<int>>& points) {
+	int n = points.size();
+	if (n <= 2) {
+		return n;
+	}
+	int ans = 0;
+	for (int i = 0; i < n; ++i) {
+		if (ans > n / 2) {
+			return ans;
+		}
+		unordered_map<string, int> mp;
+		//斜率写为delta_y/delta_x，数据类型为float，会出现精度问题
+		//将其改写为  delta_x/gcd(delta_x,delta_y)  delta_y/gcd(delta_x,delta_y)  
+		for (int j = i + 1; j < n; ++j) {
+			int del_y = points[j][1] - points[i][1];
+			int del_x = points[j][1] - points[i][0];
+			int temp = gcd(del_x, del_y);
+			del_x = del_x / temp;
+			del_y = del_y / temp;
+			string str = to_string(del_x) + "_" + to_string(del_y);
+			mp[str]++;
+			ans = max(ans, mp[str]);
+		}
+	}
+	return ans;
+}
+
+//752. 打开转盘锁
+using PSI = pair<string, int>;
+int openLock(vector<string>& deadends, string target) {
+	if (target == "0000") {
+		return 0;
+	}
+	unordered_set<string> deadcodes(deadends.begin(), deadends.end());
+	if (deadcodes.count("0000")) {
+		return -1;
+	}
+
+	//前移
+	auto num_pri = [=](char x)->char {
+		return x == '9' ? '0' : x + 1;
+	};
+	//后移
+	auto num_pos = [=](char x)->char {
+		return x == '0' ? '9' : x - 1;
+	};
+
+	//遍历所有的情况并存储
+	auto gets = [&](string& s)->vector<string> {
+		vector<string> temp;
+		for (int i = 0; i < 4; ++i) { //每一位
+			auto a = s[i];
+			s[i] = num_pri(a);
+			temp.push_back(s);
+			s[i] = num_pos(a);
+			temp.push_back(s);
+			s[i] = a;
+		}
+		return temp;
+	};
+
+	queue<PSI> que;
+	unordered_set<string> visited = {"0000"};
+	que.emplace("0000", 0);
+	while (!que.empty()) {
+		auto [status, step] = que.front();
+		que.pop();
+		vector<string> vec = gets(status);
+		for (auto a : vec) {
+			if (!visited.count(a) && !deadcodes.count(a)) {
+				if (a == target) {
+					cout << step + 1 << endl;
+					return step + 1;
+				}
+				visited.insert(a);
+				que.emplace(a, step + 1);
+			}
+		}
+	}
+	return -1;
+}
+
+
+//773. 滑动谜题
+// 少一块的拼图
+/*
+	bfs进行计算， 保存每一步可能走向的位置。   拼图大小  2 x 3
+*/
+/*
+	要求结果为    1  2  3    ===》 编号   0  1  2
+				4  5  0                3  4  5
+			可以看到，每个位置能移动到的下一个位置为   
+			0 -> 1  3
+			1 -> 0  2  4
+			2 -> 1  5
+			3 -> 0  4
+			4 -> 1  3  5 
+			5 -> 2  4
+	 因此，当找到初始值0的位置，那么便可得到下一次的位置
+	*/
+vector<vector<int>> next_step{ {1,3},{0,2,4},{1,5},{0,4},{1,3,5},{2,4} };
+int slidingPuzzle(vector<vector<int>>& board) {
+	//next step
+	string target = "123450";
+	auto trans = [&](string& s)->vector<string> {
+		vector<string> vec{};
+		int zero_index = s.find('0');
+		for (auto a : next_step[zero_index]) {
+			string ss = s;
+			swap(s[a], s[zero_index]);
+			vec.emplace_back(s);
+			s = ss;
+		}
+		return vec;
+	};
+
+	string initial = "";
+	for (int i = 0; i < 2; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			initial += (board[i][j] + '0');
+		}
+	}
+	if (initial == target) {
+		return 0;
+	}
+
+	queue<pair<string,int>> que;
+	que.emplace(initial,0);
+	unordered_set<string> us{ initial };
+	while (!que.empty()) {
+		auto [begin, step] = que.front();
+		que.pop();
+		vector<string> temp_vec = trans(begin);
+		for (auto aa : temp_vec) {
+			if (!us.count(aa)) {
+				if (aa == target) {
+					return step + 1;
+				}
+				que.emplace(aa, step + 1);
+				us.insert(move(aa));  //直接拷贝，节省时间
+				//move(a) 之后，a会变为空
+				//一定要先存到que再使用move存储
+			}
+		}
+	}
+
+	return -1;
+}
+
+
+
+//5799. 最美子字符串的数目      ////////字符串类前缀和，没掌握
+/*
+1.只考虑每个字母频率的奇偶性，就只考虑模2后的结果即可
+
+只有0和1两种情况
+
+2.只有10个字母，又只有0和1两种情况
+
+用状态压缩
+
+3.如果是区间dp的思想，就可能做不出
+用前缀dp的思路，就ok
+
+4.前缀和加速查找当前位置，前缀区间，某个状态的值
+
+5.题目最多只有一个字母的频率为奇数====只有一个字母的奇偶性不同====state只有一位不同
+（1）0个字母的频率为奇数
+（2）10个字母中，某个字母的频率为奇数
+共11种情况
+
+6.初始化
+presum_state[0] = 1
+一个字母都不选的时候，state = 0000000000，种类数为1
+*/
+long long wonderfulSubstrings(string word) {    //《===这个方法没理解     类似dp？
+	int n = word.size();
+	//区间问题，考虑前缀和
+	vector<int> pre(1<<10); //保存所有的情况
+	pre[0] = 1;
+	int state = 0;
+	int ans = 0;
+	for (auto w : word) {
+		int t = 1 << (w - 'a'); 
+		state = state ^ t; //当前前缀和
+		ans += pre[state];//所有字符均出现偶数次
+		//有一个字母出现奇数次
+		for (int i = 1; i < (1 << 10); i = i<<1) {
+			ans += pre[state ^ i];  //枚举第i个字母出现的奇偶性
+		}
+		pre[state]++;
+	}
+	return ans;
+}
+
+
+//909. 蛇梯棋
+/*
+bfs
+queue存储的是每一次所能到达的下一步，期间遇到梯子或者蛇，下一步直接变为蛇或梯子的目标点
+普通走的话，每次只能向前走1~6步
+
+虽然棋盘的编号是反的，但是假装左下角为（0，0）， 从下到上顺序递增就行
+*/
+using TIII = tuple<int, int, int>;
+int snakesAndLadders(vector<vector<int>>& board) {
+	int n = board.size();
+	//穷举下一步
+	auto nextStep = [&](int& a)->vector<TIII> {
+		vector<TIII> vec;
+		for (int i = 1; i <= 6; ++i) {
+			if (a + i > n * n) {
+				continue;
+			}
+			int x = (a - 1 + i) / n, y = (a - 1 + i) % n;  // 新的行 列 下标
+			if (x % 2 == 1) { //从下往上，奇数行逆向 最下面一行编号为0
+				y = n - 1 - y;
+			}
+			vec.emplace_back(n - 1 - x, y, a + i); //下一步的横纵坐标, 和编号
+			//行号变为 n-1-x
+		}
+		reverse(vec.begin(), vec.end());
+		return vec;
+	};
+	vector<int> visited(n * n);
+	visited[1] = 1;
+	queue<PII> que;
+	unordered_set<int> us{ 1 };
+	que.emplace(1,0);
+	while (!que.empty()) {
+		auto [begin,step] = que.front(); //初始为1
+		que.pop();
+		auto temp = nextStep(begin);
+		for (auto a : temp) {
+			int next = get<2>(a);
+			if (board[std::get<0>(a)][get<1>(a)] > 0) { //存在蛇或者梯子，那么直接跳跃
+				next = board[std::get<0>(a)][get<1>(a)];
+			}
+			if (next == n * n) {
+				return step + 1;
+			}
+			if (!visited[next]) {
+				visited[next] = 1;
+				que.emplace(next, step + 1);
+			}
+		}
+	}
+	return -1;
+}
+
+//LCP 07. 传递信息 easy
+int numWays(int n, vector<vector<int>>& relation, int k) {
+	//要求经过k轮传递到最后一个人
+	//dp[i][j]表示经过i轮传到j的方案数
+	//dp[0][0]=1
+	vector<vector<int>> dp(k+1, vector<int>(n));
+	dp[0][0] = 1;
+	for (int i = 1; i <= k; ++i) {
+		for (auto a : relation) {
+			dp[i][a[1]] += dp[i - 1][a[0]];
+		}
+	}
+	return dp[k][n-1];
+}
+
+
+//1418. 点菜展示表
+vector<vector<string>> displayTable(vector<vector<string>>& orders) {
+	//保存菜品
+	//保存桌号以及每桌所点的菜品和数量
+	unordered_map<int, unordered_map<string, int>> table;
+	unordered_set<string> food;
+
+	//提取orders的内容
+	for (auto& a : orders) {
+		table[atoi(a[1].c_str())][a[2]]++;
+		food.emplace(a[2]);
+	}
+
+	vector<string> food_name{ "Table" };
+	for (auto& a : food) {
+		food_name.emplace_back(a);
+	}
+
+	sort(food_name.begin() + 1, food_name.end());
+
+	vector<vector<string>> ans;
+
+	ans.emplace_back(food_name);
+
+	for (int i = 1; i <= 500; ++i) {
+		if (!table[i].empty()) {
+			vector<string> temp;
+			temp.emplace_back(to_string(i));
+			for (int j = 1; j < food_name.size(); ++j) {
+				//if(table[i][a]!=0){
+				temp.emplace_back(to_string(table[i][food_name[j]]));
+				//}//else{
+					//temp.emplace_back("0");
+				//}
+			}
+			ans.emplace_back(temp);
+		}
+	}
+	return ans;
+}
+
+
+//726. 原子的数量
+/*
+给定一个化学式formula（作为字符串），返回每种原子的数量。
+
+原子总是以一个大写字母开始，接着跟随0个或任意个小写字母，表示原子的名字。
+如果数量大于 1，原子后会跟着数字表示原子的数量。如果数量等于 1 则不会跟数字。H2O 和 H2O2 是可行的，但 H1O2 这个表达是不可行的。
+
+两个化学式连在一起是新的化学式
+一个括号中的化学式和数字（可选择性添加）也是化学式
+*/
+string countOfAtoms(string formula) {
+	int n = formula.size();
+	int index = 0;
+	auto findAtom = [&]()->string {
+		string temp = "";
+		temp += formula[index++]; //保存第一个大写字母
+		while (index < n && islower(formula[index])) {
+			temp += formula[index];   //小写的也加上
+			index++;
+		}
+		//原子统计完了
+		return temp;
+	};
+
+	//原子之后为数字，数字>=1    ，为1时，不显示
+	auto findNum = [&]()->int {
+		if (index == n || !isdigit(formula[index])) {
+			//结束了或者原子的后一位不为数字
+			//那么说明原子只有一个
+			return 1;
+		}
+		//原子后有数字
+		int ans = 0;
+		while (index < n && isdigit(formula[index])) {
+			ans = ans * 10 + (formula[index] - '0');
+			index++;
+		}
+		return ans;
+	};
+
+	//因为要处理括号，所以选择stack
+	stack<unordered_map<string, int>> st;
+	st.push({});
+	while (index < n) {
+		if (formula[index] == '(') {
+			st.push({});  //存储当前的原子
+			index++;
+		}
+		else if (formula[index] == ')') {
+			//当前原子已经走完了
+			//看看括号外有没有数字
+			index++;
+			int right_num = findNum();
+			auto temp = st.top();
+			//去掉括号，加到上一层
+			st.pop();
+			for (auto& [atom,count] : temp) {
+				st.top()[atom] += count * right_num;
+			}
+		}
+		else {
+			string atom = findAtom();
+			int num = findNum();
+			//加到当前原子的哈希表中
+			st.top()[atom] += num;
+		}
+	}
+
+	//st中为所有的原子数
+	vector<pair<string, int>> vec;
+	auto temp = st.top();
+	for (auto& [atom, num] : temp) {
+		vec.emplace_back(atom, num);
+	}
+
+	sort(vec.begin(), vec.end());
+
+	string ans = "";
+	for (auto a : vec) {
+		ans += a.first;
+		if (a.second > 1) {
+			ans += (to_string(a.second));
+		}
+	}
+	return ans;
+
+}
+
+//981. 基于时间的键值存储
+class TimeMap {
+public:
+	unordered_map<string, vector<pair<int, string>>> mp;
+	/** Initialize your data structure here. */
+	TimeMap() {
+
+	}
+
+	void set(string key, string value, int timestamp) {
+		mp[key].emplace_back(timestamp, value);
+	}
+	//所有的键/值字符串都是小写的。
+	string get(string key, int timestamp) {
+		auto& a = mp[key];
+		auto index = upper_bound(a.begin(), a.end(), make_pair(timestamp, string({127})));
+		//string({127})为最大的字符串
+		//string之间的比较，  c与abc    c为99  a为97  .  当c与abc之间比较时，按最短的长度来比较，即只比较 a 97  与  c 99  =>> abc<c
+		//string({123-127})均可以，因为c为122
+		if (index > a.begin()) {
+			return (index - 1)->second;
+		}
+		return "";
+	}
+};
+
+
+
+
+class AAA {
+public:
+	int ans = 0;
+	unordered_set<string> st;
+	int isPalindrome(string str) {
+		int n = str.size();
+		int l = 0, r = n - 1;
+		while (l <= r) {
+			if (str[l] != str[r]) {
+				return 0;
+			}
+			l++;
+			r--;
+		}
+		return 1;
+	}
+
+	void bfs(int count, string& s, string& temp, int judge) {
+		if (judge == s.size()) {
+			if (count ==3 && isPalindrome(temp)) {
+				st.insert(temp);
+			}
+			return;
+		}
+
+		if (judge < s.size()&&count==3) {
+			if (isPalindrome(temp)) {
+				st.insert(temp);
+			}
+			return;
+		}
+
+		//选
+		
+		bfs(count + 1, s, temp += s[judge], judge + 1);
+		temp.pop_back();
+		
+		//不选
+		bfs(count, s, temp, judge + 1);
+	}
+
+	int countPalindromicSubsequence(string s) {
+		// 长度为3
+		string temp = "";
+		bfs(0, s, temp, 0);
+		ans = st.size();
+		return ans;
+	}
+};
+
+
+//930. 和相同的二元子数组
+//前缀和+map
+int numSubarraysWithSum(vector<int>& nums, int goal) {
+	// mp里保存的是sum-goal
+	int ans = 0;
+	int sum = 0;
+	unordered_map<int, int> mp;
+	for (auto& a : nums) {
+		mp[sum]++;  //sum == goal的时候，为0，所以0要记一次
+		sum += a;
+		ans += mp[sum - goal];  //<--逆向思维
+	}
+	return ans;
+}
+
+
+//218. 天际线问题
+//1、扫描线
+//2、线段树
+vector<vector<int>> getSkyline(vector<vector<int>>& buildings) {
+	auto cmp = [&](const pair<int, int>& a, pair<int, int>& b)->bool {return a.second < b.second; };
+	priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(cmp)> que(cmp);
+	//priority_queue的第三个参数为class类型，decltype自动推断类型
+
+	vector<int> index;
+	for (auto& a : buildings) {
+		index.emplace_back(a[0]);
+		index.emplace_back(a[1]);
+	}
+	sort(index.begin(), index.end());  //所有左右端点排序 
+
+	vector<vector<int>>ans;
+	int n = buildings.size();
+	int idx = 0;
+	//按照所有的坐标，划分成的矩形，对于每个矩形，找到其中的最大值（因为可能同一位置有多栋建筑）
+	for (auto& a : index) {  //遍历矩形
+		while (idx < n && buildings[idx][0] <= a) {   //while防止了同一左端点上有多栋建筑的情况
+			que.emplace(buildings[idx][1], buildings[idx][2]);  //存入右端点和高度
+			idx++;
+		}
+		//若所有建筑左端点都不重叠的话，那么while可以写为if
+		while (!que.empty() && que.top().first <= a) {
+			que.pop();  //<==说明已经计算过
+		}
+		int highest = que.empty() ? 0 : que.top().second;
+		if (ans.size() == 0 || highest != ans.back()[1]) {
+			ans.push_back({ a,highest });
+		}
+	}
+	return ans;
+}
+
+//1818. 绝对差值和
+//对于取MOD后的操作，很巧妙
+static constexpr int MOD = 1000000007;
+int minAbsoluteSumDiff(vector<int>& nums1, vector<int>& nums2) {
+	//排完序再找对于每个nums[i]最接近的nums[j]
+	//使得| |nums1[i]-nums2[i]| - |nums1[j]-nums2[j]| |有最大值
+	vector<int> vec(nums1);
+	sort(vec.begin(), vec.end());
+
+	int max_gap = 0;
+	int n = nums1.size();
+	int sum = 0;
+	for (int i = 0; i < n; ++i) {
+		int i_gap = abs(nums1[i] - nums2[i]);
+		sum = (sum + i_gap) % MOD;
+		int j = lower_bound(vec.begin(), vec.end(), nums2[i]) - vec.begin();
+		//找到nums1中距离nums2[i]最近的一个数
+		if (j < n) {
+			max_gap = max(max_gap, i_gap - abs(vec[j] - nums2[i]));
+		}
+		if (j > 0) {  //试j的前一个
+			max_gap = max(max_gap, i_gap - abs(vec[j - 1] - nums2[i]));
+		}
+	}
+	//sum因为取了mod，因此会出现没取模前sum>max_gap， 取模后sum<max_gap，实际上少了一个MOD
+	//因此需要加上mod
+	return (abs(sum - max_gap + MOD)) % MOD;
+}
+
+
+//1846. 减小和重新排列数组后的最大元素
+int maximumElementAfterDecrementingAndRearranging(vector<int>& arr) {
+	int n = arr.size();
+	vector<int> count(n + 1);  //存储1~n的数出现的次数
+	int have = 0;
+	for (auto a : arr) {
+		count[min(a, n)]++; //<==min(a,n)的考虑了当a大于n的情况,很巧妙
+	}
+	int miss = 0;
+	int tag = 1;
+	for (int i = 1; i <= n; ++i) {
+		if (count[i] == 0) {
+			miss++;
+		}
+		else {//要注意只能变为比当前值小的值
+			miss -= min(miss, count[i] - 1);
+			//在当前位置之前有miss个空缺，最多只能消除miss个，因为只能变为比当前值小的值
+		}
+	}
+	return n - miss;
+	//一共有n个数，若miss=1即缺失了1个，那么当前的最大值肯定为4，又因为只能填充比自己小的数
+	//所以最大值为4
+}
+
+
+//815. 公交路线
+//因为数据量太大，若存储每个路线对应的站点，那么遍历的数量级太大
+//因此存储每个站点对应的路线，牺牲一点空间换取大量的时间
+int numBusesToDestination(vector<vector<int>>& routes, int source, int target) {
+	if (target == source) {
+		return 0;
+	}
+	int n = routes.size();
+	unordered_map<int, vector<int>> rec;
+	//存储每个站点包含哪些路线
+	for (int i = 0; i < n; ++i) {
+		for (auto& a : routes[i]) {
+			rec[a].push_back(i);
+		}
+	}
+	//存储完毕后，准备进行bfs
+	vector<int> visited(n, 0);//记录线路的访问情况
+	queue<int> que;
+	for (auto& a : rec[source]) {
+		visited[a] = 1;
+		que.push(a);
+	}
+	int step = 1;
+	while (!que.empty()) {
+		int m = que.size();
+		for (int i = 0; i < m; ++i) {
+			int tp = que.front();
+			que.pop();
+			for (auto& a : routes[tp]) {   //路线里有哪些点
+				if (a == target) {
+					return step;
+				}
+				for (auto& b : rec[a]) { //存储每个点对应的新路线					
+					if (!visited[b]) {
+						visited[b] = 1;
+						que.push(b);
+					}
+				}
+			}
+		}
+		step++;
+	}
+	return -1;
+}
+
+
+//线段树的思想递归求解
+//53. 最大子序和     (数组中的一个或连续多个整数组成一个子数组。求所有子数组的和的最大值。)
+//同 剑指 Offer 42. 连续子数组的最大和 
+class SegmentTree_exp1 {
+public:
+	struct Treeproperty {
+		int lsum, rsum, isum, msum;
+		//lsum is the largest sum of sub segments with l is the left endpoint
+		//rsum have the same mean
+		//isum is the largest sum of sub segments with l is the left endpoint and r is the right endpoint
+		//msum is interval sum
+	};
+
+	Treeproperty pullUp(Treeproperty l, Treeproperty r) { //区间长度变为1后，向上合并
+		int isum = l.isum + r.isum;
+		int lsum = max(l.lsum, l.isum + r.lsum);
+		int rsum = max(r.rsum, l.rsum + r.isum);
+		int msum = max(max(l.msum, r.msum), l.rsum + r.lsum);
+		//两个区间合并已经完成
+		return Treeproperty{ lsum,rsum,isum,msum };
+	}
+
+	Treeproperty getValue(vector<int>& nums, int left, int right) {  //迭代到区间长度为1
+		if (left == right) {
+			return Treeproperty{nums[left], nums[left], nums[left], nums[left] };
+		}
+		int mid = left + (right - left) / 2;
+		Treeproperty lSub = getValue(nums, left, mid);
+		Treeproperty rSub = getValue(nums, mid + 1, right);
+		//划分完成
+		return pullUp(lSub, rSub);
+	}
+
+
+
+	int maxSubArray(vector<int>& nums) {
+		int n = nums.size();
+		Treeproperty ans = getValue(nums, 0, n - 1);
+		return ans.msum;
+	}
+};
+
+
+
 /**/
 int main() {
 	//clock_t start, end;
@@ -5198,14 +5965,61 @@ int main() {
 	//sto.stoneGame(piles);
 
 
+	vector<vector<int>> routes = { {0, 1, 6, 16, 22, 23},{4, 10, 12, 20, 24, 28, 33},{14, 15, 24, 32},{1, 10, 11, 19, 27, 33},{15, 20, 21, 23, 29},{29} };
+	numBusesToDestination(routes, 4, 21);
 
 
 
 
-return 0;
+	return 0;
 }
 
 
+
+
+	//AAA a;
+	//a.countPalindromicSubsequence("nhzosdwmwomlevcctvopoiiayudhvauitqutiboveumsqvbulhbfbynzogtejuwi");
+
+	//string formula = "K4(ON(SO3)2)2";
+	//countOfAtoms(formula);
+
+
+	//vector<vector<string>> orders = { {"David", "3", "Ceviche"},{"Corina", "10", "Beef Burrito"},{"David", "3", "Fried Chicken"},{"Carla", "5", "Water"},{"Carla", "5", "Ceviche"},{"Rous", "3", "Ceviche"} };
+	//displayTable(orders);
+
+	//int n = 5;
+	//vector<vector<int>> relation = { {0, 2},{2, 1},{3, 4},{2, 3},{1, 4},{2, 0},{0, 4} };
+	//int k = 3;
+	//numWays(n, relation, k);
+
+
+	/*vector<vector<int>> vec = {
+		{-1, -1, -1, -1, -1, -1},
+		{-1, -1, -1, -1, -1, -1 },
+		{-1, -1, -1, -1, -1, -1},
+		{ -1, 35, -1, -1, 13, -1 },
+		{-1, -1, -1, -1, -1, -1},
+		{ -1, 15, -1, -1, -1, -1 }};
+	snakesAndLadders(vec);*/
+
+	//slidingPuzzle(vec);
+
+	//string a = "aabb";
+	//wonderfulSubstrings(a);
+
+	//vector<string> lock = { "8888" };
+	//string s = "0009";
+	//openLock(lock, s);
+
+	//ssss s;
+	//vector<vector<int>> g1 = { {1, 0, 1, 0, 1},{1, 1, 1, 1, 1},{0, 0, 0, 0, 0},{1, 1, 1, 1, 1},{1, 0, 1, 0, 1} };
+	//vector<vector<int>> g2 = { {0, 0, 0, 0, 0} , {1, 1, 1, 1, 1},{0, 1, 0, 1, 0},{0, 1, 0, 1, 0},{1, 0, 0, 0, 1} };
+	///s.countSubIslands(g1, g2);
+
+
+	//vector<int> nums = { 1,3,4,8 };
+	//vector<vector<int>> queries = { {0,1},{1,2},{2,3},{0,3} };
+	//minDifference(nums, queries);
 
 	//vector<int>nums = { 1,5,1 };
 	//nextPermutation(nums);

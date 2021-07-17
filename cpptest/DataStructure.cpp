@@ -165,25 +165,24 @@ public:
 
 //============================随机化快速排序==========================================
 //随机化版本的快排
-int partion(vector<int>& vec, int low, int high) {
-	if (low >= high) {
-		return low;
-	}
-	swap(vec[low], vec[low + rand() % (high - low + 1)]);//更改pivot的选取
-	int pivot = vec[low];
-	int i = low, j = high;
+int partion(vector<int>& nums, int left, int right) {
+	srand((int)time(0));
+	int randidx = left + (rand() % (right - left + 1));
+	swap(nums[left], nums[left + (rand() % (right - left + 1))]);
+	int pivot = nums[left];
+	int i = left, j = right;
 	while (i < j) {
-		while (i<j&&vec[j]>pivot) {
-			j--;
+		while (i < j and nums[j] >= pivot) {
+			j -= 1;
 		}
-		vec[i] = vec[j];
-		while (i < j&&vec[i] < pivot) {
-			i++;
+		nums[i] = nums[j];
+		while (i < j and nums[i] <= pivot) {
+			i += 1;
 		}
-		vec[j] = vec[i];
+		nums[j] = nums[i];
 	}
-	vec[i] = pivot;
-	return j;
+	nums[i] = pivot;
+	return i;
 }
 
 void quicksort(vector<int>& vec, int low, int high) {

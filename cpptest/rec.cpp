@@ -56,13 +56,34 @@ unordered_multiset  //multi
 我们需要保留一组不同的元素，并且不需要排序。
 我们需要单元素访问，即无遍历。
 
-
-
+unordered_set的构造方法：
+	unordered_set<int> set1; //创建空set1
+	unordered_set<int> set2(set1);   //拷贝构造
+	unordered_set<int> set3(set1.begin(),set1.end()); //迭代器构造
+	unordered_set<int> set4(arr,arr+5);  //数组构造
+	unordered_set<int> set5(move(set1)); //移动构造
+	unordered_set<int> set6 = {1,2,3,4,5};  //使用initializer_list初始化
 
 
 push_back()函数在向容器末尾添加新元素时，会先创建该元素，然后再将该元素移动或者拷贝到容器中；
 emplace_back()函数的底层实现是直接在容器尾部创建该新元素，不存在拷贝或者移动元素的过程。
 */
+
+
+/*
+* 括号内均为char类型
+isalpha()    判断字符是否为字母
+isdigit()    是否是数字
+isalnum()    是否是 字母或数字
+islower()    是否为小写字母
+isupper()    是否为大写字母
+
+如果是，返回非0
+如果不是返回0
+*/
+
+
+
 
 
 //decltype()  返回操作数的数据类型
@@ -222,9 +243,9 @@ abcd?
 {} ab{5}c
 	匹配 abbbbbc =>>>b的数量为5
    ab{2,5}c
-	匹配abbc ~ abbbbbc   =>>>>>b的数量为2~5
+	匹配abbc ~ abbbbbc   =>>>>>b的
+	匹配ab...c中  b出现次数大于2的数量为2~5
    ab{2,}c
-	匹配ab...c中  b出现次数大于2的
 
 若想匹配 多次出现的ab
 那么使用(ab)后跟限定符  =>>>>> (ab)  或者(ab)+
@@ -317,7 +338,7 @@ $ 匹配行尾      =>>>>> a$只会去匹配行尾的a   如abbbbbbbaca  只会匹配最后的a  ， 
 */
 
 
-//[captures] (params) mutable-> type{...} //lambda 表达式的完整形式
+//[captures] (params) mutable-> return-type{...} //lambda 表达式的完整形式
 /*
 对于captures中的内容，有以下几种
 	为空                     函数体内可以使用lambda所在范围内的所有局部变量
@@ -330,6 +351,19 @@ $ 匹配行尾      =>>>>> a$只会去匹配行尾的a   如abbbbbbbaca  只会匹配最后的a  ， 
 	=,&a,&b                 除了 a 和 b 按照引用方式传递， lambda所在范围内的其他变量按照 值传递 方式进行传递
 	&,a,b                   除了 a 和 b 按照值传递方式传递， 其他变量按照 引用传递 方式进行传递
 	...
+
+params参数列表
+	和C++中普通函数的参数列表是一个意思
+
+mutable 
+    该关键字作为一个修饰符。在默认的情况下，lambda的返回值为const，当加了mutable，可以取消其常量性质。
+	若使用了mutable，那么参数列表是必不可少的，即使它为空。
+	
+return-type
+	函数的返回类型，与C++中普通函数的返回类型一样，主要是用来追踪lambda的返回值的类型。当lambda没有返回值时，可不写。
+
+...
+	函数体。函数体内除了可以使用参数列表中的参数之外，还可以使用capture捕获的变量
 */
 
 
@@ -356,7 +390,250 @@ $ 匹配行尾      =>>>>> a$只会去匹配行尾的a   如abbbbbbbaca  只会匹配最后的a  ， 
 
 */
 
+/*
+
+*c++ 的queue没有clear这种方法
+
+想对queue实现清空，有以下几种方法
+
+1)	
+	queue<int> q1;
+	...
+	q1 = queue<int>();
+
+2)
+	while(!q.empty()){
+		q.pop();
+	}
+
+3)
+	void clear(queue<int>& q){  <==最高效，同时也保持了STL的风格
+		queue<int> temp;
+		swap(temp,q);
+	}
+	
+	或者
+	template<typename T>
+	void clear(queue<T>& q) {
+		queue<T> temp;
+		swap(temp, q);
+	}
+*/
+
+
+//============================================unique_ptr智能指针=======================
+/*
+#include <iostream>
+#include <memory>
+
+using namespace std;
+struct Task {
+	int tid;
+	Task(int id) :tid(id) {
+		std::cout << "Task::constructor" << endl;
+	}
+	~Task() {
+		cout << "Task::destructor" << endl;
+	}
+
+};
+
+int main() {
+	// 空对象 unique_str
+	std::unique_ptr<int> ptr1;  //C++ 11
+
+	//检查ptr1是否为空
+	if (!ptr1) {
+		cout << "ptr1 is empty" << endl;
+	}
+
+	//检查ptr1是否为空
+	if (ptr1 == nullptr) {
+		std::cout << "ptr1 is empty" << endl;
+	}
+
+	//创建新的unique_ptr对象
+	//!!!!!!不能通过赋值的方法创建对象
+	//std::unique_ptr<Task> ptr2 = new Task(); //compile error
+	//在创建对象时在其构造函数中传递原始指针
+	unique_ptr<Task> ptr2(new Task(2));
+	//或者
+	std::unique_ptr<Task> ptr3(new std::unique_ptr<Task>::element_type(3));   //elemwnt_type的意思
+
+	//C++14  创建unique_ptr对象    std::make_unique
+	unique_ptr<Task> ptr4 = make_unique<Task>(4);
+	//访问ptr4所对应的tid
+	cout << "id for ptr4: " << ptr4->tid << endl;
+	//使用get()获取管理对象的指针
+	Task* ptr44 = ptr4.get();
+	cout << "use get() to cout ptr44->id" << ptr44->tid << endl;
+
+	//重置ptr4
+	if (ptr4 != nullptr) {
+		cout << "ptr4 is not empty" << endl;
+	}
+	cout << "use reset() to reset ptr4" << endl;
+	//ptr4.release()
+	//ptr4会放弃对它所指对象的控制权，并返回保存的指针，将ptr4置空，不释放内存
+	//reset()会释放ptr4对它所指对象，然后重置ptr4的值
+	ptr4.reset();
+	cout << "ptr4 already reset()" << endl;
+	if (ptr4 == nullptr) {
+		cout << "after reset(), ptr4 is empty" << endl;
+	}
+
+	//unique_ptr对象不可复制， 智能移动
+	//可通过move转移unique_ptr的对象
+	//通过原始指针创建ptr5
+	unique_ptr<Task> ptr5(new Task(5));
+	//把ptr5中关联指针的所有权交给ptr55
+	unique_ptr<Task> ptr55(move(ptr5));
+	//或者写成  unique_ptr<Task> ptr55 = move(ptr5);
+	cout << "ptr5 move to ptr55: " << ptr55->tid << endl;
+	if (ptr5 == nullptr) {
+		cout << "after move(ptr5), ptr5 is empty" << endl;
+	}
+	if (ptr4 == nullptr) {
+		cout << "ptr4 is empty" << endl;
+	}
+	cout << "move ptr4 to ptr55" << endl;
+	ptr55 = move(ptr4);
+	if (ptr55 == nullptr) {
+		cout << "ptr55 is empty" << endl;
+	}
+	
+	return 0;
+}
+
+*/
+/*
+====================================unique_ptr的参数
+unique_ptr的第一个参数为指针数据类型，第二个参数为该指针自定义的析构器
+function指示回调函数(即析构函数)，然后在指针初始化时指定具体的析构函数
+*/
+//直接使用lambda表达式作为析构函数
+
+/*
+#include <iostream>
+#include <memory>
+#include <functional>
+
+using namespace std;
+
+std::unique_ptr<int, std::function<void(int*)>> testPtr(
+		new int[5], [](int* p) {
+		if (p) {
+			delete[] p;
+		}
+	});
+
+
+auto delInt = [](int* pData) {
+	if (pData) {
+		cout << "destructor " << endl;
+		delete[] pData;
+	}
+};
+
+std::unique_ptr<int, decltype(delInt)> dataPtr(new int[2], delInt);
+
+//对于自定义的数据结构和析构，在创建该类对象的unique_ptr指针时，也可定义其析构函数
+
+struct cur {
+	int curid;
+	cur(int id) :curid(id) {
+		cout << "constructor" << endl;
+	}
+	~cur() {
+		cout << "destructor" << endl;
+	}
+
+};
+
+void cur_free(struct cur* p) {
+	delete(p);
+}
+struct cur* headers = NULL;   //裸指针headers
+unique_ptr<struct cur, function<void(struct cur*)>>headerPtr(
+	headers, [](struct cur* p) {
+	if (p != nullptr) {
+		cur_free(p);  //定义析构函数
+	}
+});
+
+//headerPtr = make_unique<cur>(5);
+//cout << headerPtr->curid << endl;
+
+
+auto delcur = [](struct cur* pHeaders) {
+	if (pHeaders != nullptr) {
+		cur_free(pHeaders);    //libcurl的析构函数
+	}
+};
+unique_ptr<struct curl_slist, decltype(delcur)> headersPtr;
+
+*/
+
+
+//==================================explicit 防止隐式调用
+/*
+class Test1
+{
+public:
+	Test1(int n)
+	{
+		num = n;
+	}//普通构造函数
+private:
+	int num;
+};
+class Test2
+{
+public:
+	explicit Test2(int n)      //<------对于单变量的构造函数，尽量加explicit，防止隐式调用
+	{
+		num = n;
+	}//explicit(显式)构造函数
+private:
+	int num;
+};
+
+int main() {
+	Test1 t1 = 2;   //<----隐式调用成功
+	//Test2 t2 = 3;  compile error    explicit防止了隐式调用
+	Test2 t3(3);   //显式调用
+}
+*/
+
+
+//==================================vector的一些不一样的构造方法
+/*
+constructor
+
+// default(1)  默认构造函数
+explicit vector(const allocator_type&  alloc = allocator_type());
+
+
+//fill(2)  构建大小为n的vector，每个元素赋值为val
+explicit vector(size_type n, const value_type& val = value_type(),const allocator_type& alloc = allocator_type());
+
+
+//fill(3)  传入两个迭代器对象（或为指针），将二者的内容拷贝到vector（拷贝前会构造对应大小的容器）
+template<class InputIterator>
+vector(InputIterator first, InputIterator last, const allocator_type& alloc = alloctor_type());
+
+
+//copy(4)  传入vector对象，进行拷贝
+vector(const vector& x);
+
+
+//vector内部有自己的allocator，能够实现动态内存的分配与释放，一般不会直接使用new和delete，这样使得内存分配与释放更加安全
+vector& operator= (const vector& x);
+
+*/
 
 
 
+
+//========================================================线段树===============================================
 
