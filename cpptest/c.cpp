@@ -2333,7 +2333,7 @@ int nthUglyNumber_case2(int n) {
 	vector<int> dp(n);
 	dp[1] = 1;
 	int p2 = 1, p3 = 1, p5 = 1;
-	for (int i = 1; i < n; ++i) {
+	for (int i = 2; i < n; ++i) {
 		int nums1 = p2 * 2, nums2 = p3 * 3, nums3 = p5 * 5;
 		dp[i] = min(min(nums1, nums2), nums3); //找出乘了以后的最小值
 		if (dp[i] == nums1) {
@@ -5935,8 +5935,6 @@ public:
 		return pullUp(lSub, rSub);
 	}
 
-
-
 	int maxSubArray(vector<int>& nums) {
 		int n = nums.size();
 		Treeproperty ans = getValue(nums, 0, n - 1);
@@ -5944,6 +5942,1030 @@ public:
 	}
 };
 
+
+//1838. 最高频元素的频数
+//在一步操作中，你可以选择 nums 的一个下标，并将该下标对应元素的值增加 1 。
+//执行**最多 k 次**操作后，返回数组中最高频元素的最大可能频数(即使得数组中最多出现多少个相同的元素)
+int maxFrequency(vector<int>& nums, int k) {
+	sort(nums.begin(), nums.end());
+	int n = nums.size();
+	int l = 0, r = 0;
+	int ans = 1;
+	int count = k;
+	while (l <= r && r < n) {
+		int gap = l==r?0:nums[r] - nums[r-1];
+		int len = r - l;
+		long long need = gap * len;
+		if (need <= count) {
+			ans = max(ans, r - l + 1);			
+			r++;
+			count -= need;
+		}
+		else { //不够了，从最左侧开始删
+			l++;
+			count += (nums[r-1] - nums[l - 1]); //恢复补充的
+		}		
+	}
+	return ans;
+}
+
+
+//5815. 扣分后的最大得分
+//间隔行得同一列不扣分，不同列i,j。扣分为j-i
+long long maxPointss(vector<vector<int>>& points) {
+	//hint 1 : dp
+	//dp[i][j]表示选取points[i][j]后所获得的最大分数
+	int m = points.size();
+	int n = points[0].size();
+	vector<vector<int>> dp(m, vector<int>(n));
+	for (int i = 0; i < m; ++i) {
+		for (int j = 0; j < n; ++j) {
+			if (i == 0) {
+				dp[i][j] = points[i][j];
+			}
+			else {
+				/*
+				int max_val = 0;
+				for (int k = 0; k < n; ++k) {   //<==遍历上一行的所有dp值，会造成超时
+					max_val = max(max_val, dp[i - 1][k] + points[i][j] - abs(j - k));
+				}
+				dp[i][j] = max_val;
+				*/
+			}
+		}
+	}
+	return *max_element(dp[m - 1].begin(), dp[m - 1].end());
+}
+
+
+//138 复制带随机指针的链表
+//构造这个链表的深拷贝
+//因为有随机指针，因此不能像普通链表复制进行操作，因为random指向的结点可能还没构建
+struct Node {
+	int val;
+	Node* next;
+	Node* random;
+	Node(int _val):
+		val(_val),
+		next(NULL),
+		random(NULL){};
+};
+
+class Randomptr {
+public:
+	Node* copyRandomList(Node* head) {
+		//因为有random指针，先使用map保存下来所有的指针，便于得到新旧指针的对应关系
+		unordered_map<Node*, Node*> mp;
+		Node* p = head;
+		while (p != nullptr) {
+			mp[p] = new Node(p->val);  //保存新的结点，只保存了值
+			p = p->next;
+		}
+		//进行next和random的拷贝
+		p = head;
+		while (p) {
+			Node* newnode = mp[p];
+			if (p->next)
+				newnode->next = mp[p->next];
+			if (p->random)
+				newnode->random = mp[p->random];
+			p = p->next;
+		}
+		return mp[head];
+	}
+};
+
+
+//1743. 从相邻元素对还原数组
+vector<int> restoreArray(vector<vector<int>>& adjacentPairs) {
+	int n = adjacentPairs.size() + 1;
+	unordered_map<int, vector<int>> mp;
+	for (auto& a : adjacentPairs) {
+		mp[a[0]].push_back(a[1]);
+		mp[a[1]].push_back(a[0]);
+	} // 记录相邻
+
+	//find begin
+	int begin = 0;
+	for (auto i = mp.begin(); i != mp.end(); i++) {
+		if (i->second.size() == 1) {
+			begin = i->first;
+		}
+	}
+	vector<int> ans(n);
+	ans[0] = begin;
+	ans[1] = mp[begin][0];
+	begin = ans[1];
+	for (int i = 2; i < n; ++i) {
+		begin = mp[begin][0] == ans[i - 2] ? mp[begin][1] : mp[begin][0];  
+		// 1->2    2->1, 3   在2开始的时候，要选取3，不选取1
+		ans[i] = begin;
+	}
+	return ans;
+}
+
+
+
+int getLucky(string s, int k) {
+	string trans = "";
+	for (auto& a : s) {
+		trans+=to_string(a - 'a' + 1);
+	}
+	string temp = "";
+	while (k) {
+		int sum = 0;
+		for (auto& a : trans) {
+			sum += (a - '0');
+		}
+		temp = to_string(sum);
+		trans = temp;
+		k--;
+	}
+	int ans = 0;
+	for (auto& c : temp) {
+		ans = ans * 10 + (c - '0');
+	}
+	return ans;
+}
+
+
+int maxCompatibilitySum(vector<vector<int>>& students, vector<vector<int>>& mentors) {
+	int m = students.size();
+	int n = students[0].size();
+
+	vector<vector<int>> dp(m, vector<int>(m));
+	for (int i = 0; i < m; ++i) {
+		for (int j = 0; j < m; ++j) {
+			int temp = 0;
+			for (int k = 0; k < n; ++k) {
+				if (students[i][k] == mentors[j][k]) {
+					temp++;
+				}
+			}
+			dp[i][j] = temp;
+		}
+	}
+	vector<int> vec(m);
+	for (int i = 0; i < m; ++i) {
+		vec[i] = i;
+	}
+	int ans = 0;
+	do {
+		int cc = 0;
+		for (int i = 0; i < m; ++i) {
+			cc += dp[i][vec[i]];
+		}
+		ans = max(ans, cc);
+	} while (std::next_permutation(vec.begin(), vec.end()));
+	return ans;
+}
+
+
+struct TreeNode {
+	int val;
+	TreeNode* left;
+	TreeNode* right;
+	TreeNode(int x) :val(x), left(nullptr), right(nullptr) {};
+};
+
+class Solution {
+public:
+	unordered_map<int, vector<int>> gra;
+	vector<int> ans;
+
+	void trans(TreeNode* root) {
+		if (!root) {
+			return;
+		}
+		int val = root->val;
+		if (root->left) {
+			int lval = root->left->val;
+			gra[val].push_back(lval);
+			gra[lval].push_back(val);
+			trans(root->left);
+		}
+		if (root->right) {
+			int rval = root->right -> val;
+			gra[val].push_back(rval);
+			gra[rval].push_back(val);
+			trans(root->right);
+		}
+	}
+
+	void dfs(int x, int pre,int k) {
+		if (k == 0) {
+			ans.push_back(x);
+		}
+		for (auto& a : gra[x]) {
+			if (a != pre) {
+				dfs(a, x, k - 1);
+			}
+		}
+	}
+
+	vector<int> distanceK(TreeNode* root, TreeNode* target, int k) {
+		//树也是一种特殊的图
+		//将其转换为无向图
+		trans(root);
+		dfs(target->val, target->val, k);		
+	}
+};
+
+
+
+
+
+//1104 二叉树寻路
+//Z字形
+int getstart(int level) {
+	return (1 << level)/2;
+}
+int getend(int level) {
+	return (1 << (level + 1)) / 2 - 1;
+}
+
+vector<int> pathInZigZagTree(int label) {
+	//对于taregt而言
+	//转化为二进制，最高位11在第几个最高位，则在第几行
+	int max_one = 0;
+	int pre_one = 0;
+	int index_bit=1;
+	int cnt = 0;
+	while (index_bit<=label) {
+		index_bit= index_bit<<1;
+		cnt++;
+	}
+	int start = getstart(cnt);
+	int end = getend(cnt);
+	//找到了当前行的头尾
+	//若为奇数行，则考虑上一行来得到上一行的编号
+	//若为偶数行，考虑当前行来得到上一行的父结点编号
+	vector<int> ans;
+	ans.push_back(label);
+	while (cnt >1) {
+		int f_start = getstart(cnt - 1);
+		int f_end = getend(cnt - 1);
+		int f_label = label / 2; //label的父结点
+		int f_val = f_start + (f_end - f_label);
+		ans.insert(ans.begin(),f_val);
+		label = f_val;
+		cnt--;
+	}
+	return ans;
+}
+
+
+
+//671. 二叉树中第二小的节点
+//每个父结点为左右子节点中较小的那个、
+//找到左右节点中较小的那个，依次往下，直到找到刚好大于target的
+class Secondmin {
+public:
+
+	int findSecondMinimumValue(TreeNode* root) {
+		if (!root)
+			return -1;
+		//顶点肯定为最小的值
+		int ans = getval(root,root->val);
+		return ans;
+	}
+
+	int getval(TreeNode* node,int target) {
+		if (!node) {
+			return -1;
+		}
+		if (node->val > target) {
+			return node->val;
+		}
+		int left = getval(node->left, target);
+		int right = getval(node->right,target);
+		if (left == -1) {
+			return right;
+		}
+		if (right == -1) {
+			return left;
+		}
+		return min(left, right);
+	}
+};
+
+
+
+
+//252周赛
+//1953
+long long numberOfWeeks(vector<int>& milestones) {
+	long long max_ele = *max_element(milestones.begin(), milestones.end());
+	long long sum = accumulate(milestones.begin(), milestones.end(), 0LL);
+	long long sub = sum - max_ele;
+	long long ans = 0;
+	if (sub < max_ele) {
+		ans = 2 * sub + 1;
+	}
+	else {
+		ans = sum;
+	}
+	return ans;
+}
+
+
+
+
+
+//1954
+//坐标(i, j)处有|i|+|j|个，  选择以(0,0)为中心的正方形,求包含neededApples个的最小正方形周长
+long long minimumPerimeter(long long neededApples) {
+	/*
+		对于右上角为(n,n)的正方形，区域内的总和为
+		sum = sigma|x|+|y|   x=(-n,n) y=(-n,n)
+		//    x与y对称，因此|x|+|y|可变为2*|x| ,同时，y有2n+1和取值，所以消去y后变为  2*(2n+1)
+			= 2*(2n+1)*sigma|x|   x = (-n,n) 
+		    = 2*(2n+1) * sigma|x| x=(-n,n) 
+			= 2*(2n+1)*(2) sigma|x| x=(1,n)
+			= (2n+1)*(2n)*(n+1)
+	*/
+	long long edge = 0;
+	for (; (2 * edge + 1) * (2 * edge) * (edge + 1) < neededApples;++edge) {}
+	return edge;
+}
+
+
+//313 超级丑数
+//与264类似。264为1，3，5   313为primes
+//此处使用两种方法
+//1 优先队列存储所有出现的，每次取最小
+//2 类似于三指针，使用多指针
+int nthSuperUglyNumber(int n, vector<int>& primes) {
+	//每次取最小，使用最小堆或者priority_queue
+	if (n == 1)
+		return 1;
+	priority_queue<int,vector<int>,greater<int>> que;
+	unordered_set<int> uset;
+	que.push(1);
+	uset.insert(1);
+	vector<int> dp(n);
+	for (int i = 0; i < n; ++i) {
+		int t = que.top();
+		dp[i] = t;
+		que.pop();
+		for (auto& a : primes) {
+			long long temp = a * t;
+			if (!uset.count(temp)) {
+				que.push(temp);
+				uset.insert(temp);
+			}	
+		}
+	}
+	return dp[n - 1];
+}
+
+//case2     三指针的延伸
+int nthSuperUglyNumber_multi_pointer(int n, vector<int>& primes) {
+	if (n == 1) {
+		return 1;
+	}
+	int len = primes.size();
+	vector<int> pointers(len,1);  //pointers[i]表示peimes中的第i个数所对应的乘数
+	vector<int> dp(n+1);
+	dp[1] = 1;
+	for (int i = 2; i <= n; ++i) {
+		int min_val = INT_MAX;
+		vector<int> nums(len);
+		for (int j = 0; j < len; ++j) {
+			nums[j] = dp[pointers[j]] * primes[j];
+			min_val = min(min_val, nums[j]);
+		}
+		dp[i] = min_val;
+		for (int k = 0; k < len; ++k) {
+			if (min_val == nums[k]) {
+				pointers[k]++;  
+			}
+		}
+	}
+	return dp[n];
+}
+
+
+//1137斐波那契数加上记忆化搜索
+int cache[38];
+int tribonacci(int n) {
+	if (n == 0) {
+		return 0;
+	}
+	else if (n == 1) {
+		return 1;
+	}
+	else if (n == 2) {
+		return 1;
+	}
+	if (cache[n] != 0) {  //<记忆化搜索
+		return cache[n];
+	}
+	cache[n] = tribonacci(n - 1) + tribonacci(n - 2) + tribonacci(n - 3);
+	return cache[n];
+}
+
+
+//1337. 矩阵中战斗力最弱的 K 行
+vector<int> kWeakestRows(vector<vector<int>>& mat, int k) {
+	int m = mat.size();
+	vector<int> index(m);
+	iota(index.begin(), index.end(), 0);
+	sort(index.begin(), index.end(), [&](const auto& a, const auto& b) {
+		return mat[a] == mat[b] ? a < b : mat[a] < mat[b];
+		//可以直接对vector进行比较，rec.cpp中写了例子
+	});
+	vector<int> ans(index.begin(), index.begin() + k);
+	return ans;
+}
+
+
+//743. 网络延迟时间
+//从结点k发送一个信号，多久才能传播到所有节点。不能使所有节点收到信号，则返回-1
+//n个结点，起点为k
+int networkDelayTime(vector<vector<int>>& times, int n, int k) {
+	//dijkstra
+	//n个结点， 编号从1~n
+	vector<vector<int>> graph(n+1, vector<int>(n+1,111)); //adjacency matrix
+	vector<int> dist(n+1, 111);  //distance from source node,  最大为100，111当作无限
+	vector<int> visited(n + 1,0);
+	vector<int> pre(n + 1,0);
+
+	for (auto a : times) {
+		graph[a[0]][a[1]] = a[2];
+		if (a[0] == k) {
+			dist[a[1]] = a[2];
+			pre[a[1]] = a[0];
+		}
+	}
+	dist[k] = 0;
+	//visited[k] = 1;
+	for (int i = 1; i <= n; ++i) {  //找点
+		int temp = -1;
+		for (int j = 1; j <= n; ++j) {
+			if (!visited[j] && (temp == -1 || dist[j] < dist[temp])) { //j没被访问过，并且j的距离短于temp的距离
+				//-1是为了初始化
+				//初始 或者 找到了l
+				temp = j;  //存下当前的结点
+			}
+		}
+
+		visited[temp] = 1;
+		//找到了当前符合的结点，使用该节点去更新路径
+		for (int j = 1; j <= n; ++j) {
+			dist[j] = min(dist[j], dist[temp] + graph[temp][j]);
+		}
+
+	}
+	//此时dist已经全部更新完毕
+	int ans = *max_element(dist.begin()+1, dist.end());
+	return ans == 111 ? -1 : ans;
+}
+
+
+/*
+对于前K个最小数
+无顺序返回的话
+*/
+class smallest_K {
+public:
+	vector<int> smallestK(vector<int>& arr, int k) {
+		vector<int> ans(k);
+		return ans;
+	}
+};
+
+
+//502 IPO    initial public offering
+//从给定项目中选择 最多 k 个不同项目的列表，以 最大化最终资本
+int findMaximizedCapital(int k, int w, vector<int>& profits, vector<int>& capital) {
+	int n = capital.size();
+	//capital不有序
+	vector<int> idx(n);
+	iota(idx.begin(), idx.end(), 0);
+	sort(idx.begin(), idx.end(), [&capital](const int& a, const int& b) {
+		return capital[a] < capital[b];//按照需要的启动资金从小到大进行排序
+	});
+	/*
+	按照贪心问题进行求解，首先需要找出，当前的资本w能够进行哪些项目，选出其中利润最高的，花费p启动该项目
+	找到利润最高的之后，完成该项目，若有利润q，那么当前的资本w为  w_new = w+q  (q为净利润
+	对于之前钱不够而无法进行开展的项目，按照所需启动资金由小到大排序，每当资金满足时候，取出小顶堆顶部项目
+	*/
+	priority_queue<int> can_make;
+	for (auto a : idx) {
+		while(!can_make.empty() && capital[a]>w){  //当前的不能做了，卖了能做的赚钱
+			w = w + can_make.top();  //选取能做里面最大利润的,卖一个
+			can_make.pop();
+			if (--k == 0) {
+				return w;
+			}
+		}
+		if(can_make.empty() && capital[a] > w) {
+			//能做的项目为空并且也没有可以进行的项目了
+			break;
+		}
+		//还能做
+		can_make.push(profits[a]);
+	}
+	while (!can_make.empty() && k--) {
+		w += can_make.top();
+		can_make.pop();
+	}
+	return w;
+}
+
+
+class Solution68 {
+public:
+	string move_space(vector<string> s, int w_count, int w_len, int maxWidth) {
+		int space_num = w_count - 1;
+		int space = maxWidth - w_len - space_num;
+		string rt = "";
+		if (space % space_num) {
+			int a = space / space_num;
+			int b = space % space_num;
+			for (int i = 0; i < s.size() - 1; ++i) {
+				if (i == 0) {
+					rt = rt + s[i];
+					for (int j = 0; j < b; ++j) {
+						rt += " ";
+					}
+				}
+				else {
+					rt = rt + s[i];
+					for (int j = 0; j < a; ++j) {
+						rt += " ";
+					}
+				}
+			}
+			rt += s[s.size() - 1];
+		}
+		return rt;
+	}
+
+	vector<string> fullJustify(vector<string>& words, int maxWidth) {
+		vector<string> ans;
+		int word_length = 0;
+		int row_index = 0;
+		int word_count = 0;
+		int space_count = 0;
+		vector<string> temp;
+		int is_last = 0;
+
+		for (int i = 0; i < words.size(); ++i) {
+			int surplus = maxWidth - word_length - space_count; //还有多少空位         
+			if (surplus < words[i].size()) {
+				//放不下了，移到下一行
+				//移动前先调整这一行的空格间距               
+				//调整空格
+				string str_rt = move_space(temp, word_count, word_length, maxWidth);
+				ans.push_back(str_rt);
+				temp.clear();
+				//调整完毕，开始下一行
+				row_index++;
+				temp.push_back(words[i]);
+			}
+			else {
+				//这一行还放得下
+				word_count++;
+				word_length += words[i].size();
+				space_count = word_count - 1;
+				temp.push_back(words[i]);
+			}
+		}
+		//最后一行已经放进去了，最后一行进行左对齐
+		string last = "";
+		for (int i = 0; i < temp.size(); ++i) {
+			if (i != temp.size() - 1) {
+				last = last + temp[i] + " ";
+			}
+			else {
+				last += temp[i];
+				while (last.size() < maxWidth) {
+					last += " ";
+				}
+				ans.push_back(last);
+			}
+		}
+		return ans;
+	}
+};
+
+
+// ======================================数位dp===============================================
+class digitdp {
+private:
+	int n = 32;
+	vector<vector<int>> dp;
+public:
+	int getLength(int n) {
+		for (int i = 32; i > 0; --i) {
+			if (((n >> i) & 1) == 1)
+				return i;
+		}
+	}
+			
+	int findIntegers(int n) {
+		//10^9 暴力法必死
+		//二进制表示不包含连续1，双1就break
+		//dp吧
+		/*
+		dp[i,j]表示二进制长度为i，最高位为j时，有多少种方法
+		dp[i,j] = dp[i,j-1](可否补1)+(一定可以补0)
+		*/
+		//记忆化搜索应该也可以
+		dp.resize(n, vector<int>(n, 0));
+		dp[1][0] = 1, dp[1][1] = 1;
+		for (int i = 1; i < n; ++i) {
+			dp[i + 1][1] = dp[i][0];
+			dp[i + 1][0] = dp[i][0] + dp[i][1];
+		}
+		int len = getLength(n);
+		int ans = 0, pre = 0;
+		for (int i = len; i >= 0; i--) {
+			//判断当前位
+			int now = ((n >> i) & 1);
+			if (now == 1) {
+				ans += dp[i + 1][0];
+			}
+			if (pre == 1 && now == 1)break;
+			pre = now;
+			if (i == 0)ans++;
+		}
+		return ans;
+	}
+};
+//===========================================================================================
+
+
+
+
+//678. 有效的括号字符串
+//给定一个只包含三种字符的字符串：（ ，） 和 *
+//*可以是(或者 ）
+bool checkValidString(string s) {
+	stack<char> left;
+	stack<char> star;
+
+	for (int i = 0; i < s.size(); ++i) {
+		if (s[i] == '(') {
+			left.push(i);
+			//存取下标很巧妙，而不是直接存储括号和*
+			//这样方便统计全局，考虑次序
+		}
+		else if (s[i] == '*') {
+			star.push(i);
+		}
+		else { // == ')'
+			if (!left.empty()) {
+				left.pop();
+			}
+			else if (!star.empty()) {
+				star.pop();
+			}
+			else {
+				return false;
+			}
+		}
+	}
+	while (!left.empty() && !star.empty()) {
+		if (left.top() > star.top()) {
+			star.pop();
+			continue;
+		}
+		else {   //只有出现在左括号右侧的*才能替代对应的右括号
+			left.pop();
+			star.pop();
+		}
+	}
+	return left.empty();
+}
+
+
+//162. 寻找峰值
+//找出数组中的任意一个峰值的索引，峰值即当前位置大于左右两侧
+// nums[-1] = nums[n] = -∞
+//时间复杂度控制在 O(log(n))    二分
+int findPeakElement(vector<int>& nums) {
+	//二分
+	int l = 0, r = nums.size() - 1;
+	while (l < r) {
+		int mid = l + (r - l) / 2;
+		if (nums[mid] < nums[mid + 1]) {
+			//爬升
+			l = mid + 1;
+		}
+		else {
+			r = mid;
+		}
+	}
+	return l;
+}
+
+
+
+//212. 单词搜索 II]
+/*
+	若在每个位置都进行 words中每个词进行深搜 ，会超时
+	优化： 将word中的所有词存入前缀树，对board每个位置进行依次深搜，每次边深搜边和前缀树做对比，这样无需重复遍历word
+*/
+class trie1 {
+private:
+	
+public:
+	string word;
+	unordered_map<char, trie1*> mp;
+	trie1() :word("") {}
+
+	void insert_words(trie1* root, string& words) {
+		trie1* node = root;
+		for (auto& a : words) {
+			if (!node->mp.count(a)) {
+				node->mp[a] = new trie1();
+			}
+			node = node->mp[a];
+		}
+		// word is end
+		node->word = words;
+	}
+};
+
+
+////212. 单词搜索 II]
+class trie_example1 {
+private:
+	vector<vector<int>> steps{ {1,0},{-1,0},{0,1},{0,-1} };
+	vector<vector<int>> visited;
+public:
+	bool dfs(vector<vector<char>>& board, vector<vector<int>>& visited, int i , int j, trie1* root, set<string>& temp) {
+		int m = board.size();
+		int n = board[0].size();
+		if (!(root->mp.count(board[i][j]))) {
+			return false;
+		}
+
+		root = root->mp[board[i][j]];
+		if (root->word.size() > 0) {
+			temp.insert(root->word);  // 不要直接return  ，比如 "oa"   "oaa", 都含有oa
+			
+		}
+
+		visited[i][j] = 1;
+		for (int s = 0; s < 4; ++s) {
+			int new_x = i + steps[s][0];
+			int new_y = j + steps[s][1];
+			if (new_x >= 0 && new_x < m && new_y >= 0 && new_y < n) {
+				if(!visited[new_x][new_y])
+					dfs(board,visited, new_x, new_y, root, temp);
+			}
+		}
+		visited[i][j] = 0;
+		return true;
+	}
+
+	vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+		int m = board.size();
+		int n = board[0].size();
+		visited.resize(m, vector<int>(n, 0));
+		set<string> temp;
+		vector<string> ans;
+		trie1 tr;
+		trie1* root = new trie1();
+
+		for (auto& a : words) {
+			tr.insert_words(root, a);
+		}
+		for (int i = 0; i < m; ++i) {
+			for (int j = 0; j < n; ++j) {
+				dfs(board,visited, i, j, root, temp);
+			}
+		}
+		for (auto& b : temp) {
+			ans.push_back(b);
+		}
+		return ans;
+	}
+};
+
+
+//统计k进制下，1~m中1出现的个数   如 11有两个1
+int count1(int m, int k) {
+	//1~m,   k进制
+	int count = 0;
+	for (int i = 1; i <= m; i *= k) {
+		int a = m / i, b = m % i;
+		count += (a + k - 2) / k * i + (a % k == 1) * (b + 1);
+	}
+	return count;
+}
+
+
+// 36. 有效的数独
+/*主要是判断一个数当前行、列有无重复。  每个小矩阵内是否有重复*/
+// 大矩阵由九个小矩阵组成。
+bool isValidSudoku(vector<vector<char>>& board) {
+	vector<tuple<unordered_map<int, int>, unordered_map<int, int>, unordered_map<int, int>>> vec(9);
+	//0~8分别表示1~9 row  col 
+	//0~8分别表示每个矩阵
+	//对于下标为(i,j)的数字， 其所属矩阵编号为 (i/3)*3+(j/3)
+	for (int i = 0; i < 9; ++i) {
+		for (int j = 0; j < 9; ++j) {
+			int idx = (i / 3) * 3 + (j / 3);
+			if (board[i][j] == '.')
+				continue;
+			if (get<0>(vec[i]).count(board[i][j]) || get<1>(vec[j]).count(board[i][j]) || get<2>(vec[idx]).count(board[i][j])) {
+				return false;
+			}
+			else {
+				get<0>(vec[i])[board[i][j]]++;  //row
+				get<1>(vec[j])[board[i][j]]++;   //col
+				get<2>(vec[idx])[board[i][j]]++;  //矩阵
+			}
+		}
+	}
+	return true;
+}
+
+
+int cnt(int n) {
+	int count1 = 0, count0 = 0;
+	int num1 = 0, num0 = 0;
+	int i = 0;
+	while(n) {
+		int first = n & 1;
+		if (first == 1) {
+			if (n >> 1) {
+				num1 |= (1<<i);
+				count1++;
+			}
+		}
+		else {
+			num0 |= (1<<i);
+			count0++;
+		}
+		n >>= 1;
+		i++;
+	}
+	
+	int ans = 0;
+	if (num1 <= num0) { //加
+		ans = count1+1;
+	}
+	else { //减
+		ans = count0+1;
+	}
+	cout << ans << endl;
+	return ans;
+}
+
+
+//300. 最长递增子序列
+//给你一个整数数组 nums ，找到其中最长严格递增子序列的长度。
+//index不一定连续
+int lengthOfLIS_greedy(vector<int>& nums) {
+	//方法一 O(n^2) dp  之前写的有（见最长严格递增子序列）
+	//此处使用方法二：贪心 + 二分
+	return 0;
+}
+
+
+//数位DP
+/*windy数
+[L,R]范围内满足 不含前导零并且相邻两个数字之差至少为2的正整数
+1、 边界转换  ans[L,R] = ans[1,R] - ans[1, L-1]
+*/
+//方法1， 可使用dfs
+/*
+需要记录的状态：
+	当前枚举的位置  <--好维护
+	前一位的数字    <--好维护
+	当前位置可以填入的数  		
+*/
+class windy
+{
+private:
+	vector<vector<LL>> dp;
+	vector<LL> num;
+public:
+	LL dfs(LL pos, LL pre_num, int limit, int pre_zero) {
+		//limit 表示是否有最高位的限制
+		//pre_zero判断前导0，表示前面是否全为0
+		//如果limit为1，那么枚举的数字必须小于最大数pos位置的数， limit为0，则表示可以取0-9任意数
+		if (pos == 0) {
+			return 1;  //结束标志
+		}
+		if (!limit && !pre_zero && dp[pos][pre_num] != -1) {
+			// 没有限制，没有前导0 并且已经访问过
+			return dp[pos][pre_num];
+		}
+		int max_num;
+		if (limit) {
+			//卡边界
+			max_num = num[pos];
+		}
+		else {
+			max_num = 9;
+		}
+
+		int count = 0;
+		for (int i = 0; i <= max_num; ++i) {
+			if (abs(i - pre_num) >= 2) {
+				if (pre_zero && (i == 0)) {
+					count += dfs(pos - 1, -2, limit && (i == max_num), 1);//如果有前导0并且现在加的还是0，下一位随意
+					//limit && (i == max_num) 判断是否贴边走，若一直和最大值的数字相同，那么limit一直为1，否则有一个位置不同则limit=0
+				}
+				else {  //   !pre_zero || i!=0    没有前导零或者当前插入不是0
+					count += dfs(pos - 1, i, limit && (i == max_num), 0);//如果没有前导0，正常搜
+				}
+			}
+		}
+		if (!limit && !pre_zero) { //没有最高位限制且没有前导0时记录结果
+			dp[pos][pre_num] = count;
+		}
+		return count;
+	}
+
+	LL solve(LL x) {
+		//边界转换
+		int pos = 0;
+		dp.resize(50, vector<LL>(10, -1)); //dp[i][j]表示 dp[pos][pre_num]
+		num.resize(50, 0);  //考虑最长50位
+		while (x) {
+			num[++pos] = x % 10;
+			x /= 10;
+		}
+		return dfs(pos, -2, 1, 1);
+	}
+
+	LL digdp(LL L, LL R) {
+		LL a = solve(R);
+		LL b = solve(L - 1);
+		LL ans = a - b;
+		cout << ans << endl;
+		return ans;
+	}
+
+};
+
+
+
+//112 路径总和1
+//113 路径总和2
+//437 路径总和3
+
+
+//517. 超级洗衣机
+int findMinMoves(vector<int>& machines) {
+	int sum = accumulate(machines.begin(), machines.end(), 0);
+	int n = machines.size();
+	int each = (int)sum / n;
+	if (sum % n != 0) {
+		return -1;
+	}
+	for (auto& a : machines) {
+		a = a - each;
+	}
+	int ans = 0;
+	for (int i = 0; i < n - 1; ++i) {
+		ans = max(ans, abs(machines[i]));
+		ans = max(ans, machines[i + 1]);
+		machines[i + 1] += machines[i];
+	}
+	return ans;
+}
+
+// 转换为十六进制
+string toHex(int num) {
+	if (num == 0) {
+		return "0";
+	}
+	string replace = "0123456789abcdef", ans = "";
+	while (num != 0 && ans.size() < 8) {  // 负数右移 左侧补1， 考虑32位，所以要对size做限制
+		char temp = replace[num & 0xf];
+		ans = temp + ans;
+		num >>= 4;
+	}
+	return ans;
+}
+
+// 187. 重复的DNA序列
+// 重复出现的长度为10的子序列
+const int len = 10;
+vector<string> findRepeatedDnaSequences(string s) {
+	vector<string> ans;
+	if (s.size() < 10) {
+		return ans;
+	}
+	unordered_map<string, int> st;
+	for (int i = 0; i < s.size() - len; ++i) {
+		string window = s.substr(i, len);
+		if (st.count(window) && st[window]<2) {
+			ans.emplace_back(window);
+		}
+		st[window]++;		
+	}
+	return ans;
+}
 
 
 /**/
@@ -5964,10 +6986,33 @@ int main() {
 	//Stone sto;
 	//sto.stoneGame(piles);
 
+	//vector<vector<int>> s = { {0,0},{0,0},{0,0} };
+	//vector<vector<int>> t = { {1,1},{1,1},{1,1} };
+	//maxCompatibilitySum(s,t);
 
-	vector<vector<int>> routes = { {0, 1, 6, 16, 22, 23},{4, 10, 12, 20, 24, 28, 33},{14, 15, 24, 32},{1, 10, 11, 19, 27, 33},{15, 20, 21, 23, 29},{29} };
-	numBusesToDestination(routes, 4, 21);
 
+	//vector<vector<int>> time{ {2,1,1},{2,3,1},{3,4,1} };
+	//networkDelayTime(time, 4, 2);
+
+	smallest_K sk;
+	//vector<int> vec{ 1,3,5,7,2,4,6,8 };
+	//sk.smallestK(vec, 4);
+
+	vector<int> nums{ 4,-4,1,-3,1,-3 };
+	//choose_num(nums);
+
+
+	vector<vector<char>> boards{ {'1'},{'2'} };
+	//isValidSudoku(boards);
+
+	
+	//cnt(111);
+	//cnt(30);
+	//cnt(1);
+	
+	windy wd;
+	//wd.digdp(1, 10);
+	//wd.digdp(25, 50);
 
 
 
@@ -5976,6 +7021,37 @@ int main() {
 
 
 
+
+	//toHex(26);	
+
+	//trie_example1 sa;
+	//vector<vector<char>> board = { {'o', 'a' , 'a', 'n'},{'e', 't', 'a', 'e'},{'i', 'h', 'k', 'r'},{'i', 'f', 'l', 'v'} };
+	//vector<string> words = { "oath", "pea", "eat", "rain" };
+	//sa.findWords(board, words);
+
+	//vector<int> a{ 1,2,3 }, b{ 0,1,2 };
+	//findMaximizedCapital(3, 0, a, b);
+
+	//vector<int> primes{ 2,7,13,19 };
+	//nthSuperUglyNumber(12, primes);
+	//nthSuperUglyNumber_multi_pointer(12, primes);
+
+
+//	pathInZigZagTree(14);
+
+	//vector<vector<int>> vec{ {2,1},{3,4},{3,2} };
+	//restoreArray(vec);
+
+
+
+	//vector<vector<int>> vec{ {1,2,3},{1,5,1},{3,1,1} };
+	//maxPointss(vec);
+
+	//vector<int> vec = { 1,2,4 };
+	//maxFrequency(vec, 5);
+
+	//vector<vector<int>> routes = { {0, 1, 6, 16, 22, 23},{4, 10, 12, 20, 24, 28, 33},{14, 15, 24, 32},{1, 10, 11, 19, 27, 33},{15, 20, 21, 23, 29},{29} };
+	//numBusesToDestination(routes, 4, 21);
 
 	//AAA a;
 	//a.countPalindromicSubsequence("nhzosdwmwomlevcctvopoiiayudhvauitqutiboveumsqvbulhbfbynzogtejuwi");
