@@ -11,6 +11,7 @@
 #include <queue>
 #include <array>
 #include <deque>
+#include <regex>
 #include <time.h>
 #include "StlStringChange.h"
 #include <numeric>
@@ -1598,22 +1599,25 @@ vector<int> nextGreaterElement(vector<int>& nums1, vector<int>& nums2) {
 	map<int, int> mp;
 	vector<int> ans;
 
-	for (int i = 0; i < nums2.size(); i++) {
-		while (!st.empty() && st.top() < nums2[i]) { //因为是找第一个比它大的，所以找到后就可以出栈了
-			mp[st.top()] = nums2[i]; //
-			st.pop();
+	//找出nums2中每个元素右边第一个大于他的数
+	for (int i = nums2.size() - 1; i >= 0; --i) {
+		int temp = nums2[i];
+		while (!st.empty() && st.top() < temp) {
+			st.pop();  // 出栈小于temp的数， 此时栈里最终留下的数，即为第一个大于temp的数
 		}
-		st.push(nums2[i]);
+		mp[temp] = st.empty() ? -1 : st.top();
+		st.push(temp);
 	}
 
-	for (int j = 0; j < n; j++) {
-		if (mp.count(nums1[j])) { //里面有
-			ans.emplace_back(mp[nums1[j]]);
+	for (int i = 0; i < n; ++i) {
+		if (mp.count(nums1[i])) {
+			ans.emplace_back(mp[nums1[i]]);
 		}
 		else {
 			ans.emplace_back(-1);
 		}
 	}
+
 	return ans;
 }
 
@@ -1973,7 +1977,7 @@ bool find132pattern(vector<int>& nums) {
 }
 
 
-class Solution22 {
+class Solutionnew22 {
 private:
 	vector<vector<int>> step = { {-1,0},{1,0},{0,-1},{0,1} };
 	vector<vector<int>> visited;
@@ -2608,7 +2612,7 @@ int singleNumber(vector<int>& nums) {
 		one = (num ^ one) & (~two);
 		two = (num ^ two) & (~one);
 	}
-	return one;
+	return one;   // 出现一次的数字。  one位置为1， 最后记录结果只用返回one
 }
 
 //case 2
@@ -2624,6 +2628,36 @@ int singleNumber2(vector<int>& nums) {
 			ans |= (1 << i); //构造ans
 		}
 	}
+	return ans;
+}
+
+
+// 260. 只出现一次的数字 III
+/*
+* 一个整数数组 nums，其中恰好有两个元素只出现一次,其余所有元素均出现两次.
+* 找出只出现一次的那两个元素
+*/
+vector<int> singleNumberIIcase1(vector<int>& nums) {
+	//先将所有的数字进行异或，可以得到出现一次的两个元素的异或值
+	int num_xor = 0;
+	for (auto& a : nums) {
+		num_xor ^= a;
+	}
+	// 对于num_xor , 其二进制为1的位置，说明两个数对应位置不同， 为0的位置，说明相同
+	// 取出num_xor的二进制中最低位1（比较好取）
+	num_xor = (num_xor == INT_MIN ? num_xor : num_xor & (-num_xor));
+	// -num_xor 的最低位1不变，其他位取反
+	// INT_MAX不改变，是因为，INT_MAX的最高位为1， 其余位为0，最低位1就是其本身
+	int case1 = 0, case2 = 0;
+	for (auto& a : nums) {
+		if (a & num_xor) {  //最低位也为1的那一类数  
+			case1 ^= a;
+		}
+		else {  //最低位为0的那一类数  
+			case2 ^= a;
+		}
+	}
+	vector<int> ans{ case1,case2 };
 	return ans;
 }
 
@@ -5909,11 +5943,21 @@ class SegmentTree_exp1 {
 public:
 	struct Treeproperty {
 		int lsum, rsum, isum, msum;
-		//lsum is the largest sum of sub segments with l is the left endpoint
-		//rsum have the same mean
-		//isum is the largest sum of sub segments with l is the left endpoint and r is the right endpoint
-		//msum is interval sum
+		//lSum 表示 [l,r] 内以 l 为左端点的最大子段和
+		//rSum 表示 [l,r] 内以 r 为右端点的最大子段和
+		//msum 表示 [l,r] 的最大子段和
+		//iSum 表示 [l,r] 内区间和
 	};
+
+	/*
+		假设[l,m] 为 [l,r] 的「左子区间」，[m+1,r] 为 [l,r] 的「右子区间」
+		对于长度为 1 的区间 [i,i]，四个量的值都和 nums[i] 相等。对于长度大于 1 的区间：
+			最好维护的是iSum，区间[l,r]的isum等于左区间的isum加上右区间的isum
+			对于[l,r]的lsum，存在两种可能，一是可以等于左区间的lsum，二是可以等于左区间的isum + 右区间的lsum。 二者取大
+			对于[l,r]的rsum，一是可以等于右区间的rsum，二是可以等于左区间的rsum + 右区间的isum。  二者取大
+			对于[l,r]的msum， 当msum不跨越m时候， msum等于左区间的msum,或者右区间的msum, 若跨越了m， 
+		  那么 msum 等于 左区间的rsum 加上 右区间的 lsum，三者取最大
+	*/
 
 	Treeproperty pullUp(Treeproperty l, Treeproperty r) { //区间长度变为1后，向上合并
 		int isum = l.isum + r.isum;
@@ -6126,6 +6170,7 @@ struct TreeNode {
 	TreeNode* left;
 	TreeNode* right;
 	TreeNode(int x) :val(x), left(nullptr), right(nullptr) {};
+	TreeNode(int x, TreeNode* left, TreeNode* right) :val(x), left(left), right(right) {};
 };
 
 class Solution {
@@ -6968,6 +7013,881 @@ vector<string> findRepeatedDnaSequences(string s) {
 }
 
 
+//352. 将数据流变为多个不相交区间
+class SummaryRanges {
+private:
+	vector<vector<int>> ans;
+	map<int, int> interval;  // 记录已有区间
+	// map<int, int> 可以记录左右断点， 每次使用二分查找，  另外，map为有序字典
+	//<left, right> 表示区间，  若一个数不在任何区间之中，那么记录为<val, val>
+	// 底层是平衡树
+public:
+	SummaryRanges() {
+		
+	}
+
+	void addNum(int val) {
+		auto upper_val = interval.upper_bound(val); //大于val的区间
+		auto val_pre = (upper_val == interval.begin()) ? interval.end() : prev(upper_val);  // 左侧小于val的区间
+		if (val_pre != interval.end() && val <= val_pre->second && val >= val_pre->first) {  // val直接就在范围内
+			return;
+		}else{  // 不在范围内了
+			//考虑左右是否有符合条件的区间
+			int left_yes = (val_pre != interval.end() && val_pre->second + 1 == val);
+			int right_yes = (upper_val != interval.end() && val + 1 == upper_val->first);
+			if (left_yes && right_yes) {
+				int left = val_pre->first;
+				int right = upper_val->second;
+				interval.erase(val_pre);
+				interval.erase(upper_val);
+				interval.emplace(left, right);
+			}
+			else if (left_yes && !right_yes) {
+				interval[val_pre->first] = val;
+			}
+			else if (!left_yes && right_yes) {
+				interval.emplace(val, upper_val->second);
+				interval.erase(upper_val);
+			}
+			else {
+				interval.emplace(val, val);
+			}
+		}
+	}
+
+	vector<vector<int>> getIntervals() {
+		for (auto& a : interval) {
+			ans.push_back({ a.first, a.second });
+		}
+		return ans;
+	}
+};
+
+
+//273 整数转英文表示
+class TransNumtoWord {
+public:
+	vector<string> singles = { "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine" };
+	vector<string> teens = { "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen" };
+	vector<string> tens = { "", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety" };
+	vector<string> thousands = { "", "Thousand", "Million", "Billion" };
+
+	string numberToWords(int num) {
+		if (num == 0) {
+			return "";
+		}
+
+		std::function<void(string& temp, int three)> trans;
+		trans = [&](string& temp, int three) {
+			if (three == 0) {
+				temp += singles[three];
+			}
+			else if (three < 10) {
+				temp += singles[three] + " ";
+			}
+			else if (three < 20) {
+				temp += teens[three%10] + " ";
+			}
+			else if (three < 100) {
+				temp = temp + tens[three / 10] + " ";
+				trans(temp, three % 10);
+			}
+			else {
+				temp = temp + singles[three / 100] + " hundred ";
+				trans(temp, three % 100);
+			}
+		};
+
+
+		string ans = "";
+		for (int i = 3, divisor = 1000000000; divisor >= 0 && i >= 0; i--, divisor /= 1000) {
+			int digit = num / divisor;  // 高位到低位  三位获取
+			if (digit) {
+				num -= digit * divisor;   //获取余下位
+				string temp;
+				trans(temp, digit);
+				temp = temp + thousands[i] + " ";
+				ans += temp;
+			}
+		}
+		return ans;
+	}
+};
+
+
+//实现除法，  整数除法器( 额外添加一个保存余数)
+int divide(int dividends, int divisors) {    // 被除数，  除数
+	//被除数和除数均为 32 位有符号整数。
+	//余数初始化为被除数， 保存在64位次寄存器，低四位   除数保存在64位寄存器，高四位
+	long long dividend = dividends;
+	long long divisor = divisors;
+	int flag = ((dividend > 0) && (divisor > 0) || (dividend < 0) && (divisor < 0)) ? 0 : 1;
+	long long new_divisor = (abs(divisor));  //高8位
+	long long new_dividend = (abs(dividend));  //低8位,  余数初始化为被除数
+	new_divisor <<= 32;
+	long long quitient = 0;   //商寄存器  32位置0
+	
+	while(new_divisor>1) {
+		new_dividend -= new_divisor;  // 新的余数
+		if (new_dividend < 0) {
+			new_dividend += new_divisor;
+			quitient <<= 1;
+		}
+		else {
+			quitient <<= 1;
+			quitient ^= 1;
+		}
+		new_divisor >>= 1;
+	}
+	if (flag) {
+		quitient = -1 * quitient;
+	}
+	return quitient;
+}
+
+
+//230. 二叉搜索树中第K小的元素
+class BSTKthElement {
+public:
+	int kthSmallest(TreeNode* root, int k) {
+		// 二叉搜索树的中序遍历是有序的，可以利用其特征进行第k小的值的查找
+		/*
+		//递归 
+		std::function<int(TreeNode*, int&, int)> search = [&](TreeNode* root, int& index, int k)->int {
+			if (!root) {
+				return 0;
+			}
+			int l = search(root->left, index, k);
+			index++;
+			if (index == k) {
+				return root->val;
+			}
+			int r = search(root->right, index, k);
+			return l ? l : r;
+		};
+		int index = 0;
+		return search(root, index, k);
+		
+		*/
+
+		//迭代
+		int index = 0;
+		stack<TreeNode*> st;
+		while (root || st.size() > 0) {
+			while (root) {
+				st.push(root);
+				root = root->left;
+			}
+			//左边走到头
+			TreeNode* temp = st.top();
+			st.pop();
+			index++;
+			if (index == k) {
+				return temp->val;
+			}
+			temp = temp->right;
+			root = temp;
+		}
+		return -1;
+	}
+};
+
+
+//2033. 获取单值网格的最小操作数
+int minOperations(vector<vector<int>>& grid, int x) {
+	vector<int> one_dim;
+	for (auto& a : grid) {
+		for (auto& b : a) {
+			one_dim.push_back(b);
+		}
+	}
+	sort(one_dim.begin(), one_dim.end());
+	for (auto& a : one_dim) {
+		if ((a - one_dim[0]) % x) {
+			return -1;
+		}
+	}
+	int mid1 = (int)(one_dim.size()) / 2;
+	//int mid2 = (int)(one_dim.size()) / 2 - 1;  当只有一个元素时，不能用
+	int ans = 0;
+	for (auto& a : one_dim) {
+		ans += abs(a - one_dim[mid1]);
+	}
+	return ans;
+
+}
+
+
+//211. 添加与搜索单词 - 数据结构设计
+// 使用shared_ptr  创建前缀树
+// 因为存在内存的开辟与释放问题，因此使用shared_ptr
+class WordDictionary {
+private:
+	struct Trienode {
+		bool isend;
+		vector<std::shared_ptr<Trienode>> children;
+		Trienode() :isend(false), children(26, nullptr) {};
+	};
+	std::shared_ptr<Trienode> root;
+
+	bool find(std::shared_ptr<Trienode> ptr, string& temp, int index) {
+		if (ptr != nullptr) {
+			if (temp.size() == index) {
+				return ptr->isend;
+			}
+			if (temp[index] == '.') {  //  . 可以表示任何一个字母。
+				for (auto child : ptr->children) {
+					if (find(child, temp, index + 1)) {
+						return true;
+					}
+				}
+			}
+			else {
+				return find(ptr->children[temp[index] - 'a'], temp, index + 1);
+			}
+		}
+		return false;
+	}
+
+public:
+	WordDictionary() :root(std::make_shared<Trienode>()) {}
+
+	void addWord(string word) {
+		auto temp = root;
+		for (auto& w : word) {
+			if (temp->children[w - 'a'] == nullptr) {
+				temp->children[w - 'a'] = std::make_shared<Trienode>();
+			}
+			temp = temp->children[w - 'a'];
+		}
+		temp->isend = true;
+	}
+
+	bool search(string word) {
+		return find(root, word, 0);
+	}
+};
+
+
+// 453. 最小操作次数使数组元素相等
+/*
+给你一个长度为 n 的整数数组，每次操作将会使 n - 1 个元素增加 1 。返回让数组所有元素相等的最小操作次数。
+
+* 纯数学题
+假设目前数组总和为sum，我们需要移动次数为m，那么整体数组总和将会增加m * (n - 1)，这里的n为数组长度，最后数组所有元素都相等为x，于是有：
+sum + m * (n - 1) = x * n     (1)
+我们再设数组最小的元素为min_val，m = x - min_val​，即 ​x = m + min_val​带入(1)得：
+m = sum - min_val * n​
+*/
+
+int minMoves(vector<int>& nums) {
+	return accumulate(nums.begin(), nums.end(), 0) - nums.size() * (*min_element(nums.begin(), nums.end()));
+}
+
+
+
+// 240. 搜索二维矩阵 II
+bool searchMatrix(vector<vector<int>>& matrix, int target) {
+	int m = matrix.size();
+	int n = matrix[0].size();
+	for (int i = 0; i < m; ++i) {
+		if (matrix[i][0]<target && matrix[i][n - 1]>target) {
+			auto it = lower_bound(matrix[i].begin(), matrix[i].end(), target);
+			if (it != matrix[i].end() && *it == target) {
+				return true;
+			}
+		}
+		else if (matrix[i][0] == target || matrix[i][n - 1] == target) {
+			return true;
+		}
+		else {
+			continue;
+		}
+	}
+	return false;
+
+
+	// 方法2 ，右上角开始遍历，类似于以右上角为根的二叉搜索树BST
+	/*
+		1  <- 3  <- 5  <-  7
+		|     |     |      |
+		10 <- 11 <- 16 <- 20
+		|     |      |     |
+		23 <- 30 <- 34 <- 60
+
+		<- 表示左子树   | 表示右子树
+	*/
+	/*
+	int m = matrix.size();
+	int n = matrix[0].size();
+	int r=0,c=n-1;
+	while(r<m && c>0){
+		if(matrix[r][c]<target){
+			r++;
+		}else if(matrix[r][c]>target){
+			c--;
+		}else{
+			return true;
+		}
+	}
+	return false;
+	*/
+}
+
+// 240. 搜索二维矩阵 II
+//  Z字搜索
+/*
+	取矩阵的左下角和右上角
+	当点为(x,y)时，搜索以原矩阵左下角(m,n)为左下角，(x,y)为右上角的矩阵
+	若matrix[x][y]>target, 那么y=y-1;   // 因为y的一整列递增，最小的值都大于target，那么整列都大于，直接删除该列，移动到更小列
+	若matrix[x][y]<target, 那么x=x+1;   // 一整行递增，若当前行的 最大值小于target，那么该行均小于，直接删除该行，移动到更大行
+*/
+bool searchMatrixZ(vector<vector<int>>& matrix, int target) {
+	int m = matrix.size(), n = matrix[0].size();
+	int x = 0, y = n - 1;
+	while (x < m && y >= 0) {
+		if (matrix[x][y] == target) {
+			return true;
+		}
+		if (matrix[x][y] > target) {
+			--y;
+		}
+		else {
+			++x;
+		}
+	}
+	return false;
+}
+
+
+//22括号生成
+class Solution22 {
+public:
+	int num;
+	set<string> st;
+	/*
+	广度优先则自定义一个结构体，左右孩子分别为左右括号
+	然后将stack换为que进行层次遍历
+	*/
+
+	void dfs(string temp, int left, int right) {
+		if (left == num && right == num) {
+			if (!temp.empty()) {
+				st.emplace(temp);
+			}
+		}
+		if (right > left) {
+			return;
+		}
+		if (left < num) {
+			dfs(temp + '(', left + 1, right);
+		}
+		if (right < num) {
+			dfs(temp + ')', left, right + 1);
+		}
+	}
+	vector<string> generateParenthesis(int n) {
+		num = n;
+		string temp = "";
+		dfs(temp, 0, 0);
+		vector<string> ans = vector<string>(st.begin(), st.end());
+		return ans;
+	}
+};
+
+
+// 301. 删除无效的括号
+class Solution301 {
+public:
+	int l, r;
+	set<string> st;
+	void getParentheses(string& s, string temp, int index, int left, int right) {
+		//结束
+		if (left == l && right == r) {
+			//cout<<left<<" "<<right<<endl<<endl;
+			if (!temp.empty())
+				st.insert(temp);
+			return;
+		}
+		if (index == s.size()) {
+			return;
+		}
+		if (s[index] != '(' && s[index] != ')') {
+			temp += s[index];
+			index++;
+		}
+		//约束
+		if (left < l && s[index] == '(') {
+			getParentheses(s, temp + '(', index + 1, left + 1, right);
+		}
+		if (right < left && s[index] == ')') {
+			getParentheses(s, temp + ')', index + 1, left, right + 1);
+		}
+
+	}
+	vector<string> removeInvalidParentheses(string s) {
+		int left = 0, right = 0;
+		int sumleft = 0, sumright = 0;
+		for (auto& a : s) {
+			if (a == '(') {
+				left++;
+				sumleft++;
+			}
+			else if (a == ')') {
+				if (left > 0) {
+					left--;  //符合要求的
+				}
+				else {
+					right++;  //不符合要求的右括号
+				}
+				sumright++;
+			}
+		}
+		// 最终若left不为0， 那么剩余的left为不满足要求的
+		l = sumleft - left;  //满足的
+		r = sumright - right; //满足的
+		//获得了left和right的数量之后，进行括号生成， set去重
+		string temp = "";
+		getParentheses(s, temp, 0, 0, 0);
+		vector<string> ans = vector<string>(st.begin(), st.end());
+		return ans;
+	}
+};
+
+
+// 869. 重新排序得到 2 的幂
+class Solution869 {
+public:
+	vector<int> rec;   //记录每一位的使用情况
+	bool isPower2(int n) {
+		return (n & (n - 1)) == 0;
+	}
+
+	bool backtrack(string& num, int index, int temp) {
+		if (index == num.size()) {
+			return isPower2(temp);
+
+		} //结束
+
+		//不符合要求
+		for (int i = 0; i < num.size(); ++i) {  //逐位
+			if (rec[i] || (temp == 0 && num[i] == '0')) {   // 访问过  或者  此时为前导0
+				// 可以参考全排列II， 再添加一个条件，避免重复计算
+				// if (rec[i] || (temp == 0 && num[i] == '0') || (i>0 && !rec[i-1] && (num[i] == num[i-1])))
+				continue;
+			}
+			rec[i] = 1;
+			if (backtrack(num, index + 1, temp * 10 + num[i] - '0'))
+				return true;
+			rec[i] = 0;
+		}
+		return false;
+	}
+
+	bool reorderedPowerOf2(int n) {
+		string num = to_string(n);
+		sort(num.begin(), num.end());
+		rec.resize(num.size());
+		return backtrack(num, 0, 0);
+	}
+};
+
+
+/*
+全排列系列
+
+46. 全排列I
+	数组不含重复数字，返回其全排列
+
+47. 全排列 II
+	数组包含重复数字。 返回其全排列
+	permuteUnique...
+*/
+class SolutionPermute {
+public:
+	// 1
+	vector<vector<int>> ans1;
+
+	//2
+	vector<int> visited;
+	vector<vector<int>> ans2;
+
+
+	void backtrack1(vector<int>& num, int idx) {
+		/*
+		* 不保证字典序
+			若输入1 2 3
+			那么输出依次为  1 2 3   1 3 2   2 1 3  2 3 1   3  1  2   3  2  1 
+			 1 2 3到1 3 2时， idx为1， i为2  实现swap   后还原至 1 2 3
+		*/
+		int len = num.size();
+		if (idx == len) {
+			ans1.emplace_back(num);
+			return;
+		}
+		for (int i = idx; i < len; ++i) {
+			// idx 表示开始位置，通过交换来实现 不同组合
+			// 此处的swap方法也可以采用一个额外的数组，对未选取的数字进行位置标记，避免重复选取
+			swap(num[i], num[idx]);
+			backtrack1(num, idx + 1);
+			swap(num[i], num[idx]);
+		}
+	}
+
+	vector<vector<int>> permuteI(vector<int>& nums) {
+		backtrack1(nums, 0);
+	}
+
+	//2222222===============================================================================
+	void backtrace2(vector<int>& nums, vector<int>& temp, int idx) {
+		if (idx == nums.size()) {
+			ans2.emplace_back(temp);
+			return;
+		}
+
+		for (int i = 0; i < (int)nums.size(); ++i) {
+			if (visited[i] || (i > 0 && !visited[i - 1] && nums[i - 1] == nums[i])) {  // 最重要的地方
+				continue;
+			}
+			//若有相同数字，前一个数字的情况考虑过后，才会考虑第二个重复的数字
+			// 那么i>0 && !visited[i-1] && nums[i-1] == nums[i] 就避免了相同数字重复情况的出现
+			// 因为 !visited[i-1] 表示前一个数已经遍历过结束了
+			temp.push_back(nums[i]);
+			visited[i] = 1;
+			backtrace2(nums, temp, idx + 1);
+			visited[i] = 0;
+			temp.pop_back();
+		}
+	}
+	vector<vector<int>> permuteUnique(vector<int>& nums) {
+		int n = nums.size();
+		visited.resize(n, 0);
+		sort(nums.begin(), nums.end());
+		vector<int> temp;
+		backtrace2(nums, temp, 0);
+		return ans2;
+	}
+
+};
+
+
+// 500. 键盘行
+//使用正则表达式
+vector<string> findWords(vector<string>& words) {
+	regex pattern("(^((A|a)|(S|s)|(D|d)|(F|f)|(G|g)|(H|h)|(J|j)|(K|k)|(L|l))+$)|\
+(^((Z|z)|(X|x)|(C|c)|(V|v)|(B|b)|(N|n)|(M|m))+$)|\
+(^((Q|q)|(W|w)|(E|e)|(R|r)|(T|t)|(Y|y)|(U|u)|(I|i)|(O|o)|(P|p))+$)");
+/*
+srring换行时， \要紧贴行尾，下一行开头前不能有空格或tab
+*/
+	int tag = 0;
+	smatch mt;
+	vector<string> ans;
+	for (auto& word : words) {
+		bool ret = regex_match(word, mt, pattern);
+		if (ret) {
+			ans.emplace_back(word);
+		}
+	}
+	return ans;
+}
+
+
+// 166. 分数到小数
+string fractionToDecimal(int numerator, int denominator) {
+	string ans = "";
+	//计算整数部分
+	LL a = numerator, b = denominator;
+	if (a * b < 0) {
+		ans += "-";
+	}
+	a = abs(a);
+	b = abs(b);
+	LL before = a / b;
+	string bf = to_string(before);
+	ans = ans + bf + ".";
+	a %= b;
+	unordered_map<int, int> mp;
+	int idx = ans.size();
+	//小数部分
+	while (a) {
+		mp.insert({ a, idx });  //出现位置
+		a *= 10;
+		int temp = a / b;
+		ans += to_string(temp);
+		a %= b;
+		if (mp.count(a)) {
+			int pre = mp[a];
+			ans.insert(ans.begin() + pre, '(');
+			ans += ")";
+			break;
+		}
+		idx++;
+	}
+	
+	return ans;
+}
+
+class Solution42 {
+public:
+	// 42. 接雨水
+	int trap(vector<int>& height) {
+		// 左右两侧分别找出高于当前位置的最大值
+		// 算容量时，按照  min(左最大，右最大)
+		// 边界按0处理
+		int n = height.size();
+		vector<pair<int, int>> vec(n, { 0,0 });
+		int lmax = 0, rmax = 0;
+		for (int i = 0; i < n; ++i) {
+			vec[i].first = lmax;
+			lmax = max(lmax, height[i]);
+		}
+		for (int i = n - 1; i >= 0; --i) {
+			vec[i].second = rmax;
+			rmax = max(rmax, height[i]);
+		}
+		int ans = 0;
+		for (int i = 0; i < n; ++i) {
+			int temp = min(vec[i].first, vec[i].second);
+			if (temp < height[i]) {
+				continue;
+			}
+			else {
+				int aa = (temp - height[i]);
+				ans += aa;
+			}
+		}
+		return ans;
+	}
+
+	// 单调栈
+	// 时间复杂度O(n)
+	int trap_case2(vector<int>& height) {
+		/*
+			栈中保存的为下标，按照从栈底到栈顶，下标对应的height值递减来存储
+			若遇到比当前栈顶大的值，则出栈直到满足递减 或 栈为空
+		*/
+		int n = height.size();
+		int ans = 0;
+		stack<int> st;
+		for (int i = 0; i < n; ++i) {
+			while (!st.empty() && height[i] > height[st.top()]) {
+				int mid = st.top();
+				st.pop();
+				if (st.empty()) {
+					break; // 至少存两个数才能满足蓄水条件
+				}
+				int left = st.top();
+				int len = i - left - 1;
+				ans += (len * (min(height[left], height[i]) - height[mid]));
+			}
+			st.push(i);
+		}
+		return ans;
+	}
+};
+
+// 1218. 最长定差子序列
+int longestSubsequence(vector<int>& arr, int difference) {
+	unordered_map<int, int> ump;
+	// ump 存储当前数字的等差子序列长度
+	int ans = 0;
+	for (auto& a : arr) {
+		if (ump.count(a - difference)) {
+			ump[a] = 1 + ump[a - difference];
+
+		}
+		else {
+			ump[a] = 1;
+		}
+		ans = max(ans, ump[a]);
+	}
+	return ans;
+}
+
+
+// 407. 接雨水 II
+// 3D接雨水
+class Solution407 {
+public:
+	int trapRainWater(vector<vector<int>>& heightMap) {
+		return 0;
+	}
+};
+
+
+// 629. K个逆序对数组
+class Solution629 {
+public:
+	int MOD = 1e9 + 7;
+	int kInversePairs(int n, int k) {
+		/*
+			若当前有1-4（i-1个数据）插入的为5(插入后有i个)，那么有以下几种插入方式
+			5xxxx
+				此时多产生了i-1个逆序对，假设此时共有j个逆序对，那么  f[i][j] = f[i-1][j-(i-1)] 
+			x5xxx
+				f[i][j] = f[i-1][j-(i-2)]
+			xx5xx
+				f[i][j] = f[i-1][j-(i-3)]
+			xxx5x
+				f[i][j] = f[i-1][j-(i-4)]
+			xxxx5
+				f[i][j] = f[i-1][j-(i-5)]
+		*/
+		vector<vector<int>> dp(n + 1, vector<int>(k+1));
+		for (int i = 1; i <= n; ++i) {  //  数字个数
+			for (int j = 0; j <= k; ++j) {  // 此时有多少个逆序对
+				for (int h = 0; h <= min(i - 1, j); ++h) {  //  前有i-1个数字， j代表当前逆序对数量  
+					dp[i][j] = (dp[i][j] + dp[i - 1][j - h]) % MOD;
+				}
+			}
+		}
+ 	}
+
+	//优化
+	int kInversePairs_optim(int n, int k) {
+		return 0;
+	}
+};
+
+
+// trie  改用shared_ptr+unordered_map
+// 给trie每个结点一个值， 创建sum函数， sum(prefix)输出所有以该prefix为前缀的字符串的和
+class Trie_shared_unordered {
+private:
+	struct re_trie {
+		unordered_map<char, std::shared_ptr<re_trie>> children;
+		bool isend;
+		int sum;
+	};
+	void insert(std::shared_ptr<re_trie> root, string word, int index = 0) {  //传入参数时候，可选当前字符串的sum
+		if (index == word.size()) {
+			root->isend = true;
+			return;
+		}
+		if (!root->children.count(word[index])) {
+			root->children[word[index]] = std::make_shared<re_trie>();
+		}
+		//此处有字符，把以该字符为前缀的所有字符串sum加起来
+		//root->sum += sum;
+		insert(root->children[word[index]], word, index + 1);
+	}
+	bool find(std::shared_ptr< re_trie> root, string word, int index = 0) {
+		if (index == word.size()) {
+			if (root->isend)
+				return true;
+			else
+				return false;
+		}
+		if (!root->children.count(word[index])) {
+			return false;
+		}
+		find(root->children[word[index]], word, index + 1);
+	}
+
+};
+
+
+//318 最大单词长度乘积
+int maxProduct(vector<string>& words) {
+	int n = words.size();
+	//最大26位，int存储
+	//arr[i]每一位存储的是一个单词中出现的字母状况
+	vector<int> arr(n, 0);
+	for (int i = 0; i < n; ++i) {
+		for (auto aa : words[i]) {
+			arr[i] |= (1 << (aa - 'a'));
+		}
+	}
+	for (int i = 0; i < n;++i) {
+		cout << arr[i] << endl;
+	}
+	int ans = 0;
+	for (int i = 0; i < n; ++i) {
+		for (int j = i + 1; j < n; ++j) {
+			if (arr[i] & arr[j]) {  //真则有相同
+				continue;
+			}
+			else {
+				ans = max((int)words[i].size() * (int)words[j].size(), ans);
+			}
+		}
+	}
+	return ans;
+}
+
+
+// 563 二叉树的坡度
+// 不喜欢做树的递归
+struct TreeNode563 {
+	int val;
+	TreeNode563* left;
+	TreeNode563* right;
+	TreeNode563() : val(0), left(nullptr), right(nullptr) {}
+	TreeNode563(int x) : val(x), left(nullptr), right(nullptr) {}
+	TreeNode563(int x, TreeNode563* lc, TreeNode563* rc) : val(x), left(lc), right(rc) {}
+};
+
+class Solution563 {
+public:
+	int ans = 0;
+	int dfs(TreeNode563* root) {
+		if (root == nullptr) {
+			return 0;   // 从底向上 
+		}
+		int lroot = dfs(root->left);
+		int rroot = dfs(root->right);
+		ans += abs(lroot - rroot);
+		return root->val + lroot + rroot;
+	}
+
+	int findTilt(TreeNode563* root) {
+		dfs(root);
+		return ans;
+	}
+};
+
+
+// 397. 整数替换
+class Solution397 {
+public:
+	int integerReplacement(int n) {
+		if (n == 1) {
+			return 0;
+		}
+		else if ((n & 1)) {  //奇
+		   //return 2+min(integerReplacement((n-1)/2), integerReplacement((n+1)/2))
+			return 2 + min(integerReplacement(n / 2), integerReplacement(n / 2 + 1));  //2代表一次+1或-2，和一次/2
+			//不要直接写+1， 2147483647会越界
+		}
+		else {
+			return 1 + integerReplacement(n >> 1);   //此处的1代表一次 /2
+		}
+	}
+
+	int integerReplacement_case2(int n) {
+		long nn = n;
+		int ans = 0;
+		while (nn != 1) {
+			//因为可以用 n+1 或者n-1来替换，考虑该用哪种替换
+			// n-1去掉了最后一位1。 
+			// 若此时后两位为01，n+1转变为10，比n-1复杂。 
+			// 若为11， n+1变为00,.。。
+			if ((nn & 3) == 3 && nn != 3) {  // ......11 
+				nn++;
+			}
+			else if ((nn & 1) == 1) {  // 000...011 或 01
+				nn--;
+			}
+			else {
+				nn >>= 1;
+			}
+			ans++;
+		}
+		return ans;
+	}
+};
+
 /**/
 int main() {
 	//clock_t start, end;
@@ -7014,13 +7934,30 @@ int main() {
 	//wd.digdp(1, 10);
 	//wd.digdp(25, 50);
 
+	string s = "()())()";
+	Solution301 s301;
+	//s301.removeInvalidParentheses(s);
 
+
+	//divide(10, 3);
+
+	vector<int> vec{ 0,1,0,2,1,0,1,3,2,1,2,1 };
+	//trap(vec);
+
+
+	vector<string> aa = { "abcw","baz","foo","bar","xtfn","abcdef" };
+	maxProduct(aa);
 
 	return 0;
 }
 
+	// fractionToDecimal(7, 12);
 
+	//vector<vector<int>> matrix = { {1, 4, 7, 11, 15},{2, 5, 8, 12, 19},{3, 6, 9, 16, 22},{10, 13, 14, 17, 24},{18, 21, 23, 26, 30} };
+	//searchMatrix(matrix, 5);
 
+	//TransNumtoWord tw;
+	//tw.numberToWords(12345);
 
 	//toHex(26);	
 

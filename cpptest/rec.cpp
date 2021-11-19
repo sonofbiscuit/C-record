@@ -1,4 +1,22 @@
 /*
+* lambda的递归
+* 
+std::function<void(int, int)> backtrack = [&](int index, int rec) {  // index表示当前位置, rec记录字符使用情况便于判重
+	if (index == (int)unique_subarr.size()) { //边界条件
+		ans = max(ans, (int)__builtin_popcount(rec));
+		return;
+	}
+	//选
+	if ((unique_subarr[index] & rec) == 0) { //=0表示无重复元素
+		backtrack(index + 1, rec | unique_subarr[index]);
+	}
+	//不选
+	backtrack(index + 1, rec);
+};
+*/
+
+
+/*
 map
 //map<key, value>
 //unique keys
@@ -633,7 +651,44 @@ vector& operator= (const vector& x);
 */
 
 
+/*
+vector可直接进行大小比较
+	vector<int> a{ 1,1,1,0,0 };
+	vector<int> b{ 1,1,1,1,0 };
+	cout << (a > b) << endl;      <--- 输出 0
+	cout << (a < b) << endl;      <--- 输出 1
+
+	若a为{2,1,1,0,0}
+	则a>b输出1
+*/
 
 
-//========================================================线段树===============================================
+//部分排序 partial_sort  和  第n个元素 nth_element
+/*
+partial_sort的两个重载：
+	partial_sort(排序的起始位置，排序的结束位置，查找的结束位置)
+	partial_sort(排序的起始位置，排序的结束位置，查找的结束位置，自定义的排序方法)
+
+bool func(int a, int b){
+	return a>b;  //降序
+}
+partial_srot(vec.begin(),vec.begin()+5,vec.end(),func)
+
+partial_sort(vec.begin(), vec.begin() + 4, vec.end(), [](const auto& a, const auto& b) {
+		return a > b;
+	});
+
+
+nth_elemen()貌似就是快排
+*/
+
+
+
+
+
+
+
+
+
+
 
