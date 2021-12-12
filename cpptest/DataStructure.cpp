@@ -760,3 +760,66 @@ void nextPermutation(vector<int>& nums) {
 	reverse(nums.begin() + first_less, nums.end());
 	
 }*/
+
+
+
+//========================================================线段树===============================================
+
+
+//==================================================dijkstra==================================================
+
+
+//==================================================lower_bound(),  upper_bound()=============================
+template<typename ForwardIterator, typename T>
+inline ForwardIterator lower_bound(ForwardIterator first, ForwardIterator last, const T& value) {
+	return __lower_bound(first, last, value, distance_type(first), iterator_type(first));
+}
+
+template<typename ForwardIterator , typename T, typename Distancetype>
+// 模板函数需要发现与其迭代器参数最具体的类，以便在编译时能够最高效的使用算法
+// 因此， 对于Iterator类型，必须定义每个迭代器的   iterator_traits<iterator>::iterator_category  是描述迭代器行为最具体的类标记
+ForwardIterator __lower_bound(ForwardIterator first, ForwardIterator last, const T& value, Distancetype*, forward_iterator_tag) {
+	Distancetype len = 0;
+	distance(first, last, len);  // Return distance between iterators
+	Distancetype half;
+	ForwardIterator mid;
+
+	while (len > 0)
+	{
+		half = len >> 1;
+		advance(mid, half);
+		if (*mid < value) {
+			first = mid;
+			++first;
+			len = len - half - 1;
+		}
+		else {  //<=
+			len = half;
+		}
+	}
+	return first;
+}
+
+// 使用random_access_iterator
+template<typename RandomAccessIterator, typename T, typename Distance>
+RandomAccessIterator __lower_bound(RandomAccessIterator first, RandomAccessIterator last, const T& value, Distance*, random_access_iterator_tag) {
+	Distance len = last - first + 1;
+	Distance half;
+	RandomAccessIterator mid;
+
+	while (len > 0) {
+		half = len >> 1;
+		mid = first + half;
+		if (*mid < value) {
+			first = mid;
+			len = len - half - 1;
+		}
+		else {
+			len = half;
+		}
+	}
+	return first;
+}
+
+// upper_bound 类似， 见STL_SOURCE.cpp
+

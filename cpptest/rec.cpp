@@ -1,3 +1,6 @@
+#include <iostream>
+#include <functional>
+
 /*
 * lambda的递归
 * 
@@ -679,8 +682,29 @@ partial_sort(vec.begin(), vec.begin() + 4, vec.end(), [](const auto& a, const au
 	});
 
 
-nth_elemen()貌似就是快排
+nth_element()貌似就是快排
 */
+
+
+//**********   bind    和    make_shared
+class  A {
+public:
+	int add(int a, int b) {
+		return a + b;
+	}
+
+	void doit() {
+		std::cout << "func" << std::endl;
+	}
+};
+
+/*
+auto a = std::make_shared<A>();   //此时a是一个指针
+auto func = std::bind(&A::add, std::placeholders::_1, 3, 4);
+std::cout << func(a) << std::endl;
+*/
+
+
 
 
 

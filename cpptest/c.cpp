@@ -939,12 +939,6 @@ vector<int> findRedundantConnection(vector<vector<int>>& edges) {
 }
 
 
-
-
-
-
-
-
 class findUnion {
 public:
 	vector<int> roots;
@@ -5252,6 +5246,7 @@ vector<int> minDifference(vector<int>& nums, vector<vector<int>>& queries) {
 
 
 //1905. 统计子岛屿
+// 图论搜索
 //dfs / bfs
 class ssss {
 private:
@@ -7706,15 +7701,6 @@ int longestSubsequence(vector<int>& arr, int difference) {
 }
 
 
-// 407. 接雨水 II
-// 3D接雨水
-class Solution407 {
-public:
-	int trapRainWater(vector<vector<int>>& heightMap) {
-		return 0;
-	}
-};
-
 
 // 629. K个逆序对数组
 class Solution629 {
@@ -7888,8 +7874,656 @@ public:
 	}
 };
 
-/**/
+
+
+// 594. 最长和谐子序列
+/*
+	最长子数组，最大值和最小值之间的差别 正好是 1
+*/
+class Solution594 {
+public:
+	int findLHS_case1(vector<int>& nums) {
+		// case 1   排序数组，找出相邻元素，差值为1的最长序列
+		sort(nums.begin(), nums.end());
+		int n = nums.size();
+		int begin = 0;
+		int ans = 0;
+		for (int i = 0; i < n; ++i) {
+			while (nums[i] - nums[begin] > 1) {
+				begin++;
+			}
+			if (nums[i] - nums[begin] == 1) {
+				ans = max(ans, i - begin + 1);
+			}
+		}
+		return ans;
+	}
+
+	int findLHS_case2(vector<int>& nums) {
+		sort(nums.begin(), nums.end());
+		unordered_map<int, int> mp;   //hash map存储数字出现次数
+		for (auto& a : nums) {
+			mp[a]++;
+		}
+		int ans = 0;
+		for (int i = 0; i < (int)nums.size(); ++i) {
+			if (mp.count(nums[i]+1)) {
+				ans = max(ans, mp[nums[i]] + mp[nums[i + 1]]);
+			}
+		}
+		return ans;
+	}
+};
+
+
+
+//559. N 叉树的最大深度
+// N叉树以层次遍历 数组形式给出
+class Node559 {
+public:
+	int val;
+	vector<Node559*> children;
+
+	Node559() {}
+
+	Node559(int _val) {
+		val = _val;
+	}
+
+	Node559(int _val, vector<Node559*> _children) {
+		val = _val;
+		children = _children;
+	}
+};
+int maxDepth(Node559* root) {
+	if (root == nullptr) {
+		return 0;
+	}
+	int max_dep = 0;
+	for (int i = 0; i < root->children.size(); ++i) {
+		max_dep = max(max_dep, maxDepth(root->children[i]));
+	}
+	return max_dep + 1;
+}
+
+// 方法2  使用层序遍历
+int maxDepth_case2(Node559* root) {
+	if (root == nullptr) {
+		return 0;
+	}
+	queue<Node559*> que;
+	que.push(root);
+	int depth = 0;
+	while (!que.empty()) {
+		depth++;
+		int len = que.size();
+		while (len) {
+			Node559* temp = que.front();
+			que.pop();
+			for (auto& a : temp->children) {
+				que.push(a);
+			}
+			len--;
+		}
+	}
+	return depth;
+}
+
+
+// 384. 打乱数组
+// only write shuffle
+vector<int> shuffle(vector<int> temp) {
+	int n = temp.size();
+	for (int i = n - 1; i >= 0; --i) {
+		int j = rand() % (i + 1);
+		swap(temp[j], temp[i]);
+	}
+	return temp;
+}
+
+
+// 5930. 两栋颜色不同且距离最远的房子
+//O(n)的解法，有点巧妙
+int maxDistance(vector<int>& colors) {
+	int n = colors.size();
+	if (colors[0] != colors[n - 1]) {
+		return n - 1;
+	}
+	int ans = 0;
+	for (int i = 1; i < n; ++i) {
+		if (colors[i] != colors[0]) {
+			ans = max(ans, i);
+		}
+	}
+	for (int j = n - 1; j >= 0; --j) {
+		if (colors[j] != colors[n - 1]) {
+			ans = max(ans, n - j);
+		}
+	}
+	return ans;
+
+	/*
+	O(n^2)解法
+	int n = colors.size();
+		int res = 0;   // 两栋颜色不同房子的最远距离
+		// 遍历两栋房子下标并维护最远距离
+		for (int i = 0; i < n; ++i){
+			for (int j = i + 1; j < n; ++j){
+				if (colors[i] != colors[j]){
+					res = max(res, j - i);
+				}
+			}
+		}
+		return res;
+	*/
+}
+
+
+// 859. 亲密字符串
+// 可以通过交换 s 中的两个字母得到与 goal 相等的结果，就返回 true ；否则返回 false 
+//  "aa"和"aa"是满足的  ， "ab" "ba"是不满足的
+/* 若满足条件， 首先
+*	s和goal长度相同
+*	i!=j  s[i] == goal[j]  && s[j] == goal[i], 此时又有两种情况
+*		s == goal, 此时s[i]==goal[j]==s[j]==goal[i]
+*		s != goal, 此时s[i]==goal[j]  !=   s[j]==goal[i]
+*/
+bool buddyStrings(string s, string goal) {
+	if (s.size() != goal.size()) {
+		return false;
+	}
+	if (s == goal) {
+		// 判断s[i]==goal[j]==s[j]==goal[i] ?
+		vector<int> vec(26, 0);
+		for (auto& a : s) {
+			vec[a - 'a']++;
+			if (vec[a - 'a'] > 1) {
+				return true;
+			}
+		}
+		return false;
+	}
+	else {  // s!=goal 至少一个位置不同，找   s[i]==goal[j]  且   s[j]==goal[i]
+		int first = -1, second = -1;
+		int n = s.size();
+		for (int i = 0; i < n; ++i) {
+			if (s[i] != goal[i]) {
+				if (first == -1) {
+					first = i;
+				}
+				else if (second == -1) {
+					second = i;
+				}
+				else {
+					return false;
+				}
+			}
+		}
+		return second != -1 && (s[first] == goal[second]) && (s[second] == goal[first]);
+		//second!=-1说明只有一个位置不同
+	}
+}
+
+//5186. 区间内查询数字的频率
+class RangeFreqQuery5186 {
+private:
+	unordered_map<int, vector<int>> mp;
+public:
+	RangeFreqQuery5186(vector<int>& arr) {
+		for (int i = 0; i < (int)arr.size(); ++i) {
+			mp[arr[i]].emplace_back(i);
+		}
+	}
+
+	//自己实现一下 upper_bound 和 lower_bound
+	int query(int left, int right, int value) {
+		vector<int>::iterator l = lower_bound(mp[value].begin(), mp[value].end(), left);
+		vector<int>::iterator r = upper_bound(mp[value].begin(), mp[value].end(), right);
+		return r - l;
+	}
+};
+
+/**
+ * Your RangeFreqQuery object will be instantiated and called as such:
+ * RangeFreqQuery* obj = new RangeFreqQuery(arr);
+ * int param_1 = obj->query(left,right,value);
+ */
+
+
+
+
+// 423. 从英文中重建数字
+// 有趣的题目， 需要在哈希表进行查找时进行优化
+string originalDigits(string s) {
+	unordered_map<char, int> mp;
+	for (auto& a : s) {
+		mp[a]++;
+	}
+	// 先使用贪心
+	// 最难的是如何确定每个单词的个数，例如找"one"的个数，若依次查找 'o'、'n'、'e'， 那么可能会找到two中的o， seven中的n， eight中的e
+	// 这样没法确定是否包含"one"
+	// 因此要给每个  被查找的对象一个特殊标记
+	/*
+	可以看到，对于  zero->z为其所特有  two->w， four -> r   six->x   eight->g 
+	对剩下的  one   three   five  seven   nine   可以取其余任意特殊标记  
+			one -> o  three -> e   five -> i  seven -> v  nine -> n
+
+	最终可以把字母转换为    zero  one  wto  ethre   rfou  ifve  xsi  vseen  geiht  nine
+	*/
+	// vector<string> vec{ "zero","one","two","three","four","five","six","seven","eight","nine" };
+	vector<string> vec{ "zero","geiht","wto","xsi","seven","hetre","vfie","four","one","inne" };
+	vector<int> idx{ 0,8,2,6,7,3,5,4,1,9 };
+	string ans = "";
+	for (int i = 0; i < 10; ++i) {
+		while (mp[vec[i][0]] != 0) {
+			ans += (idx[i] + '0');
+			for (auto& a : vec[i]) {
+				mp[a]--;
+			}
+		}
+	}
+	sort(ans.begin(), ans.end());
+	return ans;
+}
+
+
+
+//5933. k 镜像数字的和  hard
+//一个 k 镜像数字 指的是一个在十进制和 k 进制下从前往后读和从后往前读都一样的 没有前导 0 的 正 整数
+// 给你进制 k 和一个数字 n ，请你返回 k 镜像数字中 最小 的 n 个数 之和
+class KMirrorNum {
+public:
+	/* 本题重点在于
+	* 1、已知一个十进制对称数，求下一个十进制对称数
+	* 2、判断一个字符串是否对称
+	* 3、计算十进制转换到k进制
+	*/
+	long long kMirror(int k, int n) {
+		
+	}
+};
+
+
+//438. 找到字符串中所有字母异位词
+vector<int> findAnagrams(string s, string p) {
+	if (s.size() < p.size()) {
+		return {};
+	}
+	int m = s.size(), n = p.size();
+	vector<int> srec(26, 0);
+	vector<int> prec(26, 0);
+	vector<int> ans;
+	for (int i = 0; i < m; ++i) {
+		if (i < n) {
+			prec[p[i] - 'a']++;
+			srec[s[i] - 'a']++;
+		}
+		else {
+			if (srec == prec) {
+				ans.emplace_back(i - n);
+			}
+			srec[s[i - n] - 'a']--;
+			srec[s[i] - 'a']++;
+		}
+	}
+	if (srec == prec) {
+		ans.emplace_back(m - n);
+	}
+	return ans;
+}
+
+
+// 400. 第 N 位数字
+int findNthDigit(int n) {
+	if (n < 10) {
+		return n;
+	}
+	LL count = 10;
+	int k = 0;
+	LL last = 0;
+	while (count <= n) {
+		last = count;
+		count = (LL)((k + 1) * pow(10, k + 1) - (pow(10, k + 1) - 1) / 9);
+		++k;
+	}
+	// k位满足了
+	LL new_n = 0;
+	LL k_num = pow(10, k - 1) + (n - last - 1) / k;  // 从k位的最小值开始，找到n所在的数字
+	int index = (n - last - 1) % k;
+	return to_string(k_num)[index] - '0';
+}
+
+
+// //**********   bind    和    make_shared
+class  A {
+public:
+	int add(int a, int b) {
+		return a - b;
+	}
+
+	void doit() {
+		std::cout << "func" << std::endl;
+	}
+};
+
+ 
+// 519. 随机翻转矩阵
+/*
+	m*n的矩阵，对于随机产生其下标，肯定会想到拉直矩阵
+	注意要产生不为0位置的下标，若使用rand()函数，其产生的是一个连续区间内的随机数字
+	因此，若矩阵某一段为  0 0 0 1 1 0 1
+	那么使用rand()无法避开值为1的地方
+	故考虑变形矩阵， 变为 0 0 0 0 1 1 1 ， 可以想到，这是一种类似于swap的操作
+  * 但是 ！！！ 因为每次调用flip()函数， 会返回当前随机产生的下标
+  * 若 0 0 0 0 1 1 1  这次flip()后的结果，index = 2，使得数组变为 0 0 1 0 1 1 1 ， 返回{2/n, 2%n}
+  * swap后， 变为 0 0 0 1 1 1 1， 此时，若再次flap（）， 也会产生index = 2， 违背了只产生非0位置的要求
+  * 此次的index = 2， 实际上返回的是swap之前的 index = 3的位置。 
+  ！！！ 因此，需要保留一次映射来记录每次虚拟swap的值
+
+  0 1 2 3 4 5   若第一次生成4  那么有4->5的映射， 若下次生成2，那么有2->4的映射，但是4->5有，那么应该变为2->5
+*/
+class Solution519 {
+private:
+	int m;
+	int n;
+	unordered_map<int, int> mp;  // 存储拟swap的信息
+	int total;
+public:
+	// Solution519(int m, int n) 使用二元矩阵的大小 m 和 n 初始化该对象
+	Solution519(int m, int n) {
+		this->m = m;
+		this->n = n;
+		this->total = m * n;
+		srand(time(nullptr));
+	}
+
+	// int[] flip() 返回一个满足 matrix[i][j] == 0 的随机下标 [i, j] ，并将其对应格子中的值变为 1
+	vector<int> flip() {
+		int index = rand() % total;
+		int row = index / n;
+		int col = index % n;
+		vector<int> ans;
+		if (mp.count(index)) {  //  此位置是其他位置swap来的
+			ans = { mp[index] / n, mp[index] % n };
+		}
+		else {
+			ans = { row, col };
+		}
+
+		// 将该位置与最后一个位置交换
+		if (mp.count(total - 1)) {  //值为0最后一个位置是其他位置交换而来
+			mp[index] = mp[total - 1];
+		}
+		else {
+			mp[index] = total - 1;
+		}
+		total--;
+		return ans;
+	}
+
+	//void reset() 将矩阵中所有的值重置为 0
+	void reset() {
+		total = m * n;
+		mp.clear();
+	}
+};
+
+
+// 计数排序
+void countSort(vector<int>& vec) {
+	int min_ele = *min_element(vec.begin(), vec.end());
+	int max_ele = *max_element(vec.begin(), vec.end());
+	int interval = max_ele - min_ele + 1;
+	vector<int> temp(interval, 0);
+	for (auto& a : vec) {
+		temp[a]++;
+	}
+	for (int i = 0; i < temp.size(); ++i) {
+		int t = temp[i];
+		while (t) {
+			cout << i << endl;
+			--t;
+		}
+	}
+}
+
+// 282. 给表达式添加运算符
+//给定一个仅包含数字 0-9 的字符串 num 和一个目标值整数 target ，
+//在 num 的数字之间添加 二元 运算符（不是一元）+、- 或 *  和  ** 拼接  1，2-》12**
+//返回所有能够得到目标值的表达式
+class Solution282 {
+private:
+	int len;
+	LL target;
+	vector<string> ans;
+	string num;
+public:
+	// 回溯
+	/*
+		乘号*会改变运算顺序，若有 1+2+3， 若此时加个*并且后续为4
+		那么式子变为 1+2+3*4  对于这个式子， 定义 sum = 1+2+3  则prenum = 3  (代表最后一位带符号的操作数)
+		对于*后  可以得到结果为： (sum-prenum)+prenum*4 = (1+2+3-3)+3*4 = 15
+	*/
+	void dfs(string& path, LL sum, LL presum, int index) {
+		if (index == len) {
+			if (sum == target) {
+				ans.emplace_back(path);
+			}
+			return;
+		}
+		string temp = "";
+		for (int i = index; i < len; ++i) {
+			temp += num[i];  // 拼接
+			LL opt_num = stoll(temp);   //当前位置的数
+			if (index == 0) {
+				path += temp;
+				dfs(path, opt_num, opt_num, i + 1);
+				path.erase(path.size() - temp.size());
+			}
+			else {
+				path = path + "+" + temp;
+				dfs(path, sum + opt_num, opt_num, i +1);
+
+				path.replace(path.size() - temp.size() - 1, 1, "-");
+				dfs(path, sum - opt_num,  -opt_num, i +1);
+
+				path.replace(path.size() - temp.size() - 1, 1, "*");
+				dfs(path, sum - presum + presum * opt_num, presum * opt_num, i +1);
+				path.erase(path.size() - temp.size() - 1);
+			}
+			if (temp == "0") {
+				//前导0
+				return;
+			}
+		}
+	}
+
+	//addOperators("2147483648", -2147483648);
+	vector<string> addOperators(string num, int target) {
+		this->len = num.size();
+		this->target = target;
+		this->num = num;
+		string temp = "";
+		dfs(temp, 0, 0, 0);
+		return ans;
+	}
+};
+
+
+// 快速幂法
+// 50 pow(x,y)
+/*
+	若有一个求 x^77, 从左到右可以看到  x^1 -> x^2 -> x^4 -> x^9 -> x^19 -> x^38 ->x^77
+	显然，若从左到右求，我们没法知道哪一步需要诚意 x
+	但是从右到左求，显而易见，当为奇数(如77)时，低一位为 下取整 77/2 = 38
+	当为偶数时，低一位为 38/2
+*/
+class Solution50 {
+public:
+	double QuickMul(double x, LL N) {
+		if (N == 0) {
+			return 1.0;
+		}
+		double y = QuickMul(x, N / 2);
+		return N % 2 == 0 ? y * y : x * y * y;
+	}
+
+	double myPow(double x, int n) {
+		LL N = n;
+		return n >= 0 ? QuickMul(x, N) : 1 / QuickMul(x, -N);
+	}
+};
+
+
+// 372. 超级次方
+//你的任务是计算 ab 对 1337 取模，a 是一个正整数，b 是一个非常大的正整数且会以数组形式给出。
+/*
+	本题基于50 幂方法
+	// 取模运算的法则
+	(a+b)%c = (a%c+b%c)%c
+	(a-b)%c = (a%c-b%c)%c
+	(a*b)%c = (a%c*b%c)%c
+*/
+class Solution372 {
+public:
+	using LL = long long;
+	static constexpr int MOD = 1337;
+	// 快速幂的递归写法
+	LL QuickPow(LL x, LL n) {
+		LL ans = 1;
+		while (n) {
+			if (n % 2 == 1) {
+				ans = (ans * x) % MOD;// 可以在这里MOD，防止乘法越界
+			}
+			x = (x % MOD) * (x % MOD) % MOD;
+			n /= 2;
+		}
+		return ans;
+	}
+
+	// 此处c=1337
+	int superPow(int a, vector<int>& b) {
+		LL ans = 1;
+		for (int i = b.size() - 1; i >= 0; --i) {
+			ans = ans * QuickPow(a, b[i]) % MOD;
+			a = QuickPow(a, 10);
+		}
+		return ans;
+	}
+};
+
+// 1034. 边界着色
+// 图论搜索题目   BFS/DFS
+class Solution1034 {
+private:
+	vector<vector<int>> visited;
+	vector<vector<int>> move{ {0,-1},{0,1},{-1,0},{1,0} };
+	int color;
+	int m;
+	int n;
+	int pre_color;
+	vector<vector<int>> rec;
+public:
+	void dfs(vector<vector<int>>& grid, int row, int col) {
+		visited[row][col] = 1;
+		bool isborder = false;
+		for (auto& a : move) {  // 当前位置往四个方向走
+			int new_row = row + a[0];
+			int new_col = col + a[1];
+			// 判断边界(更新后的点为非正常情况，说明 [row, col] 为边界）     （正常情况：范围内，颜色为初始颜色)
+			if (!(new_row >= 0 && new_row < m && new_col >= 0 && new_col < n && grid[new_row][new_col] == pre_color)) {
+				isborder = true;
+			}
+			else if (!visited[new_row][new_col]) {  //正常情况且未访问过
+				visited[new_row][new_col] = 1;
+				dfs(grid, new_row, new_col);
+			}
+		}
+		if (isborder) {  // 注意边界坐标的保留
+			rec.push_back({ row,col });
+		}
+	}
+
+	vector<vector<int>> colorBorder(vector<vector<int>>& grid, int row, int col, int color) {
+		this->m = grid.size();
+		this->n = grid[0].size();
+		this->visited.resize(m, vector<int>(n, 0));
+		this->color = color;
+		this->pre_color = grid[row][col];
+		dfs(grid, row, col);
+		for (auto& a : rec) {
+			grid[a[0]][a[1]] = color;
+		}
+		return grid;
+	}
+};
+
+
+//689. 三个无重叠子数组的最大和
+// 数组中求和最大的3个不重叠且长度为k（连续）的子数组
+//dp不会
+vector<int> maxSumOfThreeSubarrays(vector<int>& nums, int k) {
+	int n = nums.size();
+	vector<int> ans;
+	// 三个滑动窗口
+	int sum1 = 0, maxsum1 = 0, maxsum1index = 0;
+	int sum2 = 0, maxsum2 = 0, maxsum2index = 0, maxsum1indexrec = 0;
+	int sum3 = 0, maxsum3 = 0;
+	for (int i = 2 * k; i < n; ++i) {
+		sum1 += nums[i - 2 * k];
+		sum2 += nums[i - k];
+		sum3 += nums[i];
+		if (i >= 3 * k - 1) {
+			if (sum1 > maxsum1) {
+				maxsum1 = sum1;
+				maxsum1index = i - 3 * k + 1;
+			}
+			if (sum2 + maxsum1 > maxsum2) {
+				maxsum2 = sum2 + maxsum1;
+				maxsum1indexrec = maxsum1index;
+				maxsum2index = i - 2 * k + 1;
+			}
+			if (sum3 + maxsum2 > maxsum3) {
+				maxsum3 = sum3 + maxsum2;
+				ans = { maxsum1indexrec,maxsum2index,i - k + 1 };
+			}
+			sum1 -= nums[i - 3 * k + 1];
+			sum2 -= nums[i - 2 * k + 1];
+			sum3 -= nums[i - k + 1];
+		}
+	}
+	return ans;
+
+}
+
+
+// 407. 接雨水 II
+// 3D接雨水
+class Solution407 {
+public:
+	int trapRainWater(vector<vector<int>>& heightMap) {
+		return 0;
+	}
+};
+
+
+// 375. 猜数字大小 II
+int getMoneyAmount(int n) {
+	return 0;
+}
+
+
+
+/*
 int main() {
+
+	
+	return 0;
+}*/
+
+	//Solution1034 sol;
+	//vector<vector<int>> vecs{ {1,2,2},{2,3,2} };
+	//sol.colorBorder(vecs, 0, 1, 3);
 	//clock_t start, end;
 	//start = clock();
 
@@ -7914,15 +8548,15 @@ int main() {
 	//vector<vector<int>> time{ {2,1,1},{2,3,1},{3,4,1} };
 	//networkDelayTime(time, 4, 2);
 
-	smallest_K sk;
+	//smallest_K sk;
 	//vector<int> vec{ 1,3,5,7,2,4,6,8 };
 	//sk.smallestK(vec, 4);
 
-	vector<int> nums{ 4,-4,1,-3,1,-3 };
+	//vector<int> nums{ 4,-4,1,-3,1,-3 };
 	//choose_num(nums);
 
 
-	vector<vector<char>> boards{ {'1'},{'2'} };
+	//vector<vector<char>> boards{ {'1'},{'2'} };
 	//isValidSudoku(boards);
 
 	
@@ -7930,26 +8564,32 @@ int main() {
 	//cnt(30);
 	//cnt(1);
 	
-	windy wd;
+	//windy wd;
 	//wd.digdp(1, 10);
 	//wd.digdp(25, 50);
 
-	string s = "()())()";
-	Solution301 s301;
+	//string s = "()())()";
+	//Solution301 s301;
 	//s301.removeInvalidParentheses(s);
 
 
 	//divide(10, 3);
 
-	vector<int> vec{ 0,1,0,2,1,0,1,3,2,1,2,1 };
+	//vector<int> vec{ 0,1,0,2,1,0,1,3,2,1,2,1 };
 	//trap(vec);
 
+	//Solution282 sol;
+	//sol.addOperators("2147483648", -2147483648);
 
-	vector<string> aa = { "abcw","baz","foo","bar","xtfn","abcdef" };
-	maxProduct(aa);
 
-	return 0;
-}
+	//countSort(vec);
+
+	///auto a = std::make_shared<A>();   //此时a是一个指针
+	///auto funcds = std::bind(&A::add, std::placeholders::_1, 3, 4);
+	///std::cout << funcds(a) << std::endl;   // cout  7
+
+	// vector<string> aa = { "abcw","baz","foo","bar","xtfn","abcdef" };
+	// maxProduct(aa);
 
 	// fractionToDecimal(7, 12);
 
