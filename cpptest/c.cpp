@@ -12,10 +12,11 @@
 #include <array>
 #include <deque>
 #include <regex>
-#include <time.h>
+#include <ctime>
 #include "StlStringChange.h"
 #include <numeric>
 #include <functional>
+#include <cmath>
 
 
 /* #pragma GCC optimize(2) //O2优化
@@ -8495,6 +8496,94 @@ vector<int> maxSumOfThreeSubarrays(vector<int>& nums, int k) {
 	return ans;
 
 }
+
+
+//851. 喧闹和富有
+//返回一个整数数组 answer 作为答案，其中 answer[x] = y 的前提是，在所有拥有的钱肯定不少于 person x 的人中，person y 是最安静的人
+//case1 dfs  从穷到富，记录图
+//case2 拓扑排序
+class Solution {
+public:
+	vector<int> loudAndRich_case1(vector<vector<int>>& richer, vector<int>& quiet) {
+		int n = (int)quiet.size();
+		vector<vector<int>> graph(n);
+
+		for (auto& a : richer) {
+			graph[a[1]].emplace_back(a[0]); // 形成一条边 a[1]->a[0], 从穷的走向富的，a[0]比较富,逆着走
+		}
+
+		vector<int> ans(n, -1);  // ans记录比自己富有的人中，安静度最小的那一个
+
+		function<void(int)> dfs = [&](const int& x)->void {
+			if (ans[x] != -1) {
+				return;
+			}
+			// 先给自身一个值，可能自己入度为0
+			ans[x] = x;
+			for (auto& j : graph[x]) {  // 按顺序来，j比x富有
+				dfs(j);  //往富的走，直到走至最后一个比自己富的
+				// 更新的条件是，安静度比当前的安静度小
+				if (quiet[ans[j]] <= quiet[ans[x]]) {  // 可以更新
+					ans[x] = ans[j];
+				}
+			}
+		};
+
+		for (int i = 0; i < n; ++i) {
+			dfs(i);
+		}
+		return ans;
+	}
+
+	vector<int> loudAndRich_case2(vector<vector<int>>& richer, vector<int>& quiet) {
+		int n = (int)quiet.size();
+		vector<vector<int>> graph(n);
+		vector<int> indeg(n, 0);
+		for (auto& a : richer) {
+			graph[a[0]].emplace_back(a[1]);
+			++indeg[a[1]];
+		}
+
+		queue<int> que;
+		vector<int> ans(n);
+		for (int deg = 0; deg < n; ++deg) {
+			if (!indeg[deg]) {  //入度为0
+				que.push(deg);
+			}
+			ans[deg] = deg;  //每个结点的ans先置为自身
+		}
+		while (!que.empty()) {
+			int temp = que.front();  // 当前的富人结点
+			que.pop();
+			for (int k = 0; k < (int)graph[temp].size(); ++k) {
+				//找比富人穷的结点
+				int next_param = graph[temp][k];  // 比他穷
+				if (--indeg[next_param]==0) {
+					que.push(next_param);  //加入
+				}	
+				
+				if (quiet[ans[next_param]] > quiet[ans[temp]]) {  // 用更小的答案来更新穷的结点的ans
+					ans[next_param] = ans[temp];  // ans[temp]的 原因是小心多个结点的传递
+				}
+			}
+		}
+		return ans;
+	}
+};
+
+
+//207. 课程表
+//210. 课程表II
+//630. 课程表III
+//1462.课程表IV
+class Solution {
+public:
+	// 课程表I  显然拓扑排序/或者dfs/bfs    判断是否有环
+	bool canFinish207(int numCourses, vector<vector<int>>& prerequisites) {
+
+	}
+};
+
 
 
 // 407. 接雨水 II
