@@ -1,10 +1,13 @@
-﻿#include <iostream>
+﻿#define _CRT_SECURE_NO_WARNINGS
+
+#include <iostream>
 #include <vector>
 #include <unordered_set>
 #include <set>
 #include <map>
 #include <unordered_map>
 #include <string>
+#include <sstream>
 #include <algorithm>
 #include <typeinfo>
 #include <stack>
@@ -17,6 +20,7 @@
 #include <numeric>
 #include <functional>
 #include <cmath>
+
 
 
 /* #pragma GCC optimize(2) //O2优化
@@ -8502,7 +8506,7 @@ vector<int> maxSumOfThreeSubarrays(vector<int>& nums, int k) {
 //返回一个整数数组 answer 作为答案，其中 answer[x] = y 的前提是，在所有拥有的钱肯定不少于 person x 的人中，person y 是最安静的人
 //case1 dfs  从穷到富，记录图
 //case2 拓扑排序
-class Solution {
+class Solution851 {
 public:
 	vector<int> loudAndRich_case1(vector<vector<int>>& richer, vector<int>& quiet) {
 		int n = (int)quiet.size();
@@ -8572,18 +8576,390 @@ public:
 };
 
 
+//1610. 可见点的最大数目
+// 返回视野中能看到的点的最大数量，人是可以在一定角度内旋转的
+// 思路：计算出所有点的极角， 排序后，二分法或者滑动窗口
+// 几何   坐标系   数学
+
+//             !!!!!!!!!!  注意    atan2()的返回值范围为 [−π,π]，它的覆盖范围为 2π。
+//  对于 点p, 以其为边界的可视区域为   p+angle,  若此时大于180度，  那么之前计算的atan值为负的点，应该是在可视范围，但是并没有计算在内，因此要将其转为正数， 加个2*pi(画图理解)
+const auto M_PI = 3.14159265;
+int visiblePoints(vector<vector<int>>& points, int angle, vector<int>& location) {   //angle传入的是角度， 按数值传入，如90度传入90
+	vector<double> polar;
+	int count = 0;  // 重合
+	for (auto& point : points) {
+		if (point[0] == location[0] && point[1] == location[1]) {
+			count++;
+			continue;
+		}
+		double degree = atan2(point[1] - location[1], point[0] - location[0]);
+		polar.emplace_back(degree);
+	}
+	sort(polar.begin(), polar.end());
+	int m = (int)polar.size();
+	for (int i = 0; i < m; ++i) {
+		polar.emplace_back(polar[i] + 2 * M_PI);
+	}
+
+	// 人的可视范围为 angle
+	// case1 可以从边缘的点开始， 找到角度为angle时，有多少个点在
+	// case2 滑动窗口简单一些
+	double range = angle * M_PI / 180.0;
+
+	int ans1 = 0;
+	for (int i = 0; i < (int)polar.size(); ++i) {  //方法1
+	   int j = upper_bound(polar.begin(), polar.end(), polar[i] + range) - polar.begin();
+	   ans1 = max(ans1, j-i);
+	}
+
+	int ans2 = 0;
+	int k = 0;
+	for (int i = 0; i < (int)polar.size(); ++i) {   //方法2
+		while (k < (int)polar.size() && polar[k] <= (polar[i] + range)) {
+			++k;
+		}
+		ans2 = max(ans2, k - i);
+	}
+	//return ans1+count;
+
+	return ans2 + count;
+}
+
+
+//针对419和997的并查集
+
+class unionFind_419and997 {
+private:
+	// 记录一下连通集的数量
+	int set_size;
+	vector<int> root; //记录父节点
+	vector<int> range; //记录每个集合的秩，即元素个数
+public:
+	unionFind_419and997(int n){  //结点数
+		root.resize(n);
+		range.resize(n, 1);
+		this->set_size = n;
+		for (int i = 0; i < n; ++i) {
+			root[i] = i;  //父节点设置为自己
+		}
+	}
+
+	void union_num(int x, int y) {  // 按照秩合并， 小->大
+		int i = find_num(x);
+		int j = find_num(y);
+		if (i != j) {
+			if (range[i] <= range[j]) {
+				root[i] = j;
+				range[j] += range[i];
+			}
+			else {
+				root[j] = i;
+				range[i] += range[j];
+			}
+		}
+		--set_size;
+	}
+
+	int find_num(int x) { // find给个路径压缩
+		//路径上的每一个元素都置为x的父节点
+		return root[x] == x ? x : (root[x] = find_num(root[x]));
+	}
+};
+
+
+//419. 甲板上的战舰
+/*
+	这题的题目描述很垃圾，大体意思就是找有几个连通集， 理解为战舰队列比较方便
+	对于甲板上的战舰， 只能整行排列或者整列排列, 同时两个战舰队列之间要留空至少一格 ，举个例子（.表示空，X表示有）
+	X  .  .  X
+	.  .  .  X
+	.  .  .  X
+	.  .  .  X这就算有两个战舰队列 ，返回2
+	  
+	.  .  .  X
+	X  X  X  X
+	.  .  .  X   
+	.  .  .  X 这就是不合规范的，因为未留空
+
+	.  .  .  X
+	X  X  .  X
+	.  .  .  X
+	.  .  .  X   返回2
+*/
+class Solution419 {
+public:
+	// 方法1，从左上角开始，  若当前位置有战舰，  那么只考虑他的左侧和上侧， 如果有一个地方有的话，说明是一行或者一列
+	//  那么整体的战舰队列数目不增加
+	int countBattleships_case1(vector<vector<char>>& board) {
+		int ans = 0;
+		int m = (int)board.size(), n = (int)board[0].size();
+		for (int i = 0; i < m; ++i) {
+			for (int j = 0; j < n; ++j) {
+				if (board[i][j] == 'X') {
+					if (i > 0 && board[i - 1][j] == 'X') {
+						continue;
+					}
+					if (j > 0 && board[i][j - 1] == 'X') {
+						continue;
+					}
+					ans++;
+				}
+			}
+		}
+		return ans;
+	}
+
+	//方法2  统计连通集的数量，即 unionFind_419and997 中的  set_size
+};
+
+
+// 997. 找到小镇的法官
+// 被997的测试用例骗了，不能拿并查集
+// 就是看有没有所有的点直接指向同一个终点，此终点的出度为0
+// 统计每个结点的出入度，出度为0且入读为n-1的，就为法官，代码不写
+
+
+
+//475. 供暖器
+// houses和heaters并不是按顺序写的
+int findRadius(vector<int>& houses, vector<int>& heaters) {
+	sort(houses.begin(), houses.end());
+	sort(heaters.begin(), heaters.end());
+	int max_radius = 0;
+	// 如何去找离房屋最近的两个供暖器 , 比如房屋2  找取暖器1和4
+	//二分？还是新开数组给O（n）
+	int n = houses.size();
+	int pre = 0, last = 0;
+	int ans = 0;
+	for (auto& h : houses) {
+		while (last<heaters.size() && h>heaters[last]) {
+			pre = last;
+			++last;  //找到房屋左侧和右侧的热水器
+		}
+		if (last == 0) {  //第一个热水器就在房子同一位置或右侧
+			ans = max(ans, heaters[last] - h);  // 简单来说就是房屋左侧没有热水器
+		}
+		else if (pre == heaters.size() - 1) {  // 房屋右侧没有热水器 
+			ans = max(ans, houses[houses.size() - 1] - heaters[pre]);
+		}
+		else {
+			ans = max(ans, min(h - heaters[pre], heaters[last] - h));
+		}
+		//cout<<h<<" " <<heaters[pre]<<" "<<heaters[last]<<endl;
+	}
+	return ans;
+}
+
+
+// 字符串匹配问题
+class Solution_substring {
+public:
+	// 686. 重复叠加字符串匹配
+	int repeatedStringMatch(string a, string b) {
+		int m = a.size();
+		int n = b.size();
+		int ans = 1;
+		string temp = a;
+		while (a.size() <= 2 * m + n) {
+			if (a.find(b) == string::npos) {
+				++ans;
+				a += temp;
+			}
+			else {
+				return ans;
+			}
+		}
+		return -1;
+	}
+};
+
+
 //207. 课程表
 //210. 课程表II
 //630. 课程表III
 //1462.课程表IV
-class Solution {
+class SolutionKCB {
 public:
-	// 课程表I  显然拓扑排序/或者dfs/bfs    判断是否有环
+	// 课程表I  显然拓扑排序/或者dfs/bfs    判断是否有环    可以自身到自身
 	bool canFinish207(int numCourses, vector<vector<int>>& prerequisites) {
+		vector<vector<int>> graph(numCourses);
+		vector<int> indeg(numCourses);
+		for (auto& a : prerequisites) {
+			if (a[0] == a[1]) {
+				return false;
+			}
+			++indeg[a[1]];
+			graph[a[0]].emplace_back(a[1]);
+		}
+		queue<int> que;
+		for (int i = 0; i < (int)indeg.size();++i) {
+			if (!indeg[i]) {
+				que.push(i);
+			}
+		}
+		while (!que.empty()) {
+			int temp = que.front();
+			que.pop();
+			for (int i = 0; i < graph[temp].size(); ++i) {
+				if (--indeg[graph[temp][i]] == 0) {
+					que.push(graph[temp][i]);
+				}
+			}
+		}
+		return all_of(indeg.begin(), indeg.end(), [](const int& a) {
+			return a == 0;
+		});
+	}
 
+
+	// 课程表II和I的意思一样，只不过是多了个打印结果
+
+	// 630. 课程表 III
+	int scheduleCourse630(vector<vector<int>>& courses) {
+		return 0;
 	}
 };
 
+// 1705. 吃苹果的最大数目
+// apples[i]代表第i天产生多少个苹果
+// days[i]代表第i天的苹果多久腐烂
+// 贪心法，每次吃最早要过期的苹果
+// 以天为条件，比较好做
+int eatenApples(vector<int>& apples, vector<int>& days) {
+	std::function cmp = [&](const pair<int, int>& a, const pair<int, int>& b) ->bool {
+		return a.first == b.first ? a.second >= b.second : a.first >= b.first;
+	};
+	priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(cmp)> que(cmp);   //天 果子数
+	int n = (int)apples.size();
+	int ans = 0;
+	int days_count = 0;
+	while (days_count < n) {
+		if (!que.empty() && que.top().first <= days_count) {
+			que.pop();
+		}
+		int day_end = days[days_count] + days_count;
+		int apple_num = apples[days_count];
+		if (apple_num > 0) {
+			que.push({ day_end,apple_num });
+		}
+		if (!que.empty()) {
+			PII temp = que.top();
+			que.pop();
+			temp.second--;
+			if (temp.second > 0) {
+				que.push({ temp.first,temp.second });
+			}
+			++ans;
+		}
+		++days_count;
+	}
+
+	while (!que.empty()) {
+		if (!que.empty() && que.top().first <= days_count) {
+			que.pop();
+		}
+		if (que.empty()) {
+			return ans;
+		}
+		PII temp = que.top();
+		que.pop();
+		int num = min(temp.first - days_count, temp.second);
+		ans += num;
+		days_count += num;
+	}
+	return ans;
+}
+
+
+// 使用 stringstream 使用指定字符分割字符串
+vector<string> ss(string text) {
+	stringstream ss;
+	ss << text;
+	string temp;
+	vector<string> ans;
+	while (getline(ss, temp, ' ')) {
+		ans.push_back(temp);
+	}
+	return ans;
+}
+
+
+
+// rabin-karp
+class RabinKarp {
+private:
+	int p = 26;
+public:
+	RabinKarp() {};
+	~RabinKarp() {};
+	int rabinkarp(string s, string t) {  //s父串，  t子串
+		// 先构建出父串所有的hash值，再进行查找
+		int n = s.size();
+		
+	}
+
+};
+
+
+// 1044. 最长重复子串   hard
+// 重复子串代表该连续子串在 字符串中出现的次数为2次或更多，出现之间可以考虑重叠，返回 任意一个 具有  **最长长度** 的重复子串
+// // rabin-karp算法  + 二分   (字符串哈希)
+// 二分处理长度
+// 对于 rabin-karp 考虑将每一个字符转换为 0-26  转换为26进制  考虑所有字符串中所有的乘积
+// 那如何进行hash呢？ 我们可以用一个质数 p ，比如 31 当作底数； 将字符串转化为 sub[0]*p^(m-1)+sub[1]*p^(m-2)...+sub[m-1]
+
+class Solution1014 {
+public:
+	unordered_set<unsigned long long, int> set;
+	string longestDupSubstring(string s) {
+		int n = s.size();
+		int l = 1;
+		int r = n - 1;
+		int len = 0;
+		unsigned long long prime = 31;
+
+		auto find = [&](int len)->int {
+			unsigned long long power = 1;
+			unsigned long long hash = 0;
+
+			for (int i = 0; i < len; ++i) {
+				hash = hash * prime + (s[i] - 'a');
+				power = power * prime;
+			}
+			unordered_map<unsigned long long, int> mp;
+			mp[hash]++;
+			for (int i = len; i < n; ++i) {
+				hash = hash * prime - power * (s[i - len] - 'a') + (s[i] - 'a');
+				if (mp.count(hash)) {
+					// 返回起始坐标
+					return (i - len + 1);
+				}
+				mp[hash]++;
+			}
+			return -1;
+		};
+
+		int ans = -1;
+		while (l <= r) {
+			int mid = l + (r - l) / 2;
+			int index = find(mid);
+			if (index != -1) {  //找到重复的，那么加大长度继续查找
+				len = mid;   //记录当前长度
+				l = mid + 1;
+				ans = index;
+			}
+			else {
+				r = mid - 1;
+			}
+		}
+		if (ans == -1) {
+			return "";
+		}
+		else {
+			return s.substr(ans, len);
+		}
+	}
+};
 
 
 // 407. 接雨水 II
@@ -8603,12 +8979,11 @@ int getMoneyAmount(int n) {
 
 
 
-/*
+/**/
 int main() {
-
 	
 	return 0;
-}*/
+}
 
 	//Solution1034 sol;
 	//vector<vector<int>> vecs{ {1,2,2},{2,3,2} };

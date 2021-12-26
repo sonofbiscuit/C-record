@@ -1,6 +1,8 @@
 #include <iostream>
 #include <functional>
 
+// string的push_back()的速度比  + 和 insert的速度快
+
 /*
 * lambda的递归
 * 
