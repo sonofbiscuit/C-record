@@ -8275,6 +8275,12 @@ public:
 
 
 // 计数排序
+//计数排序，不是基于元素比较，而是利用数组下标确定元素的正确位置
+// 待排序列：9 3 5 4 9 1 2 7 8 1 3 6 5 3 4 0 10 9 7 9
+//数组值：| 0 1 2 3 4 5 6 7 8 9 10 |
+//次数值：| 1 2 1 3 2 2 1 2 1 4 1  |
+//直接便利数组，输出数组元素的下标值，元素的值是几就输出多少次。
+// 输出  0 1 1 2 3 3 3 4 4 5 5 6 7 7 8 9 9 9 10
 void countSort(vector<int>& vec) {
 	int min_ele = *min_element(vec.begin(), vec.end());
 	int max_ele = *max_element(vec.begin(), vec.end());
@@ -8893,11 +8899,36 @@ public:
 	RabinKarp() {};
 	~RabinKarp() {};
 	int rabinkarp(string s, string t) {  //s父串，  t子串
-		// 先构建出父串所有的hash值，再进行查找
-		int n = s.size();
-		
-	}
+		// 子串hash
+		int m = s.size();
+		int n = t.size();
+		unsigned long long subhash = 0;
+		for (int i = 0; i < n; ++i) {
+			subhash = subhash * p + (t[i] - 'a');
+		}
 
+		//父串
+		unsigned long long hash = 0;
+		unsigned long long power = 1;
+		unordered_map<unsigned long long, int> mp;
+		for (int i = 0; i < n; ++i) {
+			hash = hash * p + s[i] - 'a';
+			power *= p;
+		}
+		mp[hash]++;
+		if (mp.count(subhash)) {
+			return 0;   // return index
+		}
+		
+		for (int i = n; i < m; ++i) {
+			hash = hash * p - (s[i - n] - 'a') * power + (s[i] - 'a');
+			mp[hash]++;
+			if (mp.count(subhash)) {
+				return i - n + 1;
+			}
+		}
+		return -1;
+	}
 };
 
 
@@ -8906,7 +8937,8 @@ public:
 // // rabin-karp算法  + 二分   (字符串哈希)
 // 二分处理长度
 // 对于 rabin-karp 考虑将每一个字符转换为 0-26  转换为26进制  考虑所有字符串中所有的乘积
-// 那如何进行hash呢？ 我们可以用一个质数 p ，比如 31 当作底数； 将字符串转化为 sub[0]*p^(m-1)+sub[1]*p^(m-2)...+sub[m-1]
+// 那如何进行hash呢？ 我们可以用一个质数 p ，比如 31 当作底数； 
+// 将字符串转化为 sub[0]*p^(m-1)+sub[1]*p^(m-2)...+sub[m-1]
 
 class Solution1014 {
 public:
@@ -8962,6 +8994,68 @@ public:
 };
 
 
+//825. 适龄的朋友
+class Solution825 {
+public:
+	//case1使用 二分查找+双指针
+	int numFriendRequests_case1(vector<int>& ages) {
+		int n = (int)ages.size();
+		int ans = 0;
+		sort(ages.begin(), ages.end());
+		// x->y  条件2和条件3合并  大的给小的发送
+		// 全满足   0.5 * age[x] + 7 < age[y] <= age[x] 才发送
+		// 当前用户为x !!!!!!
+		for (int i = 0; i < n; ++i) {
+			int left = upper_bound(ages.begin(), ages.end(), 0.5 * ages[i] + 7) - ages.begin();
+			int right = upper_bound(ages.begin(), ages.end(), ages[i]) - ages.begin();
+			//cout<<i<<left<<right<<endl;
+			ans += (right > left ? right - left - 1 : 0);
+		}
+		return ans;
+	}
+
+	// case2 使用计数排序加前缀和
+	int numFriendRequests_case2(vector<int>& ages) {
+		// ages为[1,120]    计数排序
+		vector<int> count(121);
+		for (auto& age : ages) {
+			count[age]++;
+		}
+
+		//年龄人数的前缀和
+		vector<int> presum(121);
+		for (int i = 1; i < 121; ++i) {
+			presum[i] = presum[i - 1] + count[i];
+		}
+
+		int ans = 0;
+		for (int i = 1; i < 121; ++i) {
+			if (i < 15) {
+				continue;
+			}
+			if (count[i]) {
+				// 当前用户为x, 只有当y>0.5*age[x]+7 且 0.5x+7<x，  可以看到x大于15 才发送  找边界  
+				int left = 0.5 * i + 7 + 1;  //向上取整
+				ans += count[i] * (presum[i] - presum[left - 1] - 1);
+				//乘以count[i]是不排除同年龄有多个人的情况
+			}
+		}
+		return ans;
+	}
+};
+
+
+// 472. 连接词
+class Solution472 {
+public:
+	vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+
+	}
+};
+
+
+
+
 // 407. 接雨水 II
 // 3D接雨水
 class Solution407 {
@@ -8982,6 +9076,12 @@ int getMoneyAmount(int n) {
 /**/
 int main() {
 	
+	string s = "abcabcccdd";
+	string t = "ccc";
+	RabinKarp rb;
+	rb.rabinkarp(s, t);
+
+
 	return 0;
 }
 
