@@ -1502,7 +1502,8 @@ bool isValidSerialization(string preorder) {
 }
 
 
-//最长严格递增子序列
+// 最长上升子序列问题    LIS
+// 300. 最长递增子序列
 int lengthOfLIS(vector<int>& nums) {
 	int n = nums.size();
 	if (n == 0) {
@@ -1522,6 +1523,39 @@ int lengthOfLIS(vector<int>& nums) {
 	cout << *max_element(dp.begin(),dp.end()) << endl;
 	return *max_element(dp.begin(), dp.end());
 }
+
+
+//case2 使用贪心算法+二分查找
+int lengthOfLIS_CASE2(vector<int>& nums) {
+	int n = nums.size();
+	if(n == 0){
+		return 0;
+	}
+	int len = 1;
+	vector<int> b(n+1);
+	b[len] = nums[0];
+	for (int i = 1; i < n; ++i) {
+		if (nums[i] > b[len]) {
+			b[++len] = nums[i];
+		}
+		else {
+			int l = 0, r = len;
+			while (l <= r) {
+				int mid = l + (r - l) / 2;
+				if (b[mid] < nums[i]) {
+					l = mid + 1;
+				}
+				else {
+					r = mid - 1;
+				}
+			}
+			b[l] = nums[i];
+		}
+	}
+	return len;
+}
+
+
 
 
 //Russian Doll Envelopes
@@ -9044,26 +9078,630 @@ public:
 	}
 };
 
+// 1995. 统计特殊四元组
+// 是个简单题，但是注意hash的存储细节！！！！！！！！！！！！
+int countQuadruplets(vector<int>& nums) {
+	//a < b < c < d   不连续！
+	int n = nums.size();
+	unordered_map<int, int> mp;
+	int ans = 0;
+	for (int b = n - 3; b >= 1; --b) {
+		/*
+		// 这个块是错误答案，因为我们先计算a+b,会造成重复计算
+		// 因为从大长度逐步扩展到小长度
+		// 对于提前存储结果，从小长度到大长度比较好
+		for(int a = 0;a<b;++a){  //  先找出所有的a + b
+			mp[nums[a]+nums[b]]++;
+		}
+		int d=n-1;
+		for(int c = d-1;c>b;--c){
+			ans+=(mp[nums[d]-nums[c]]);
+			cout<<c<<" "<<d<<endl;
+		}*/
+		//b给了最长的长度，那么我们先存储c 和 d的值
+		int c = b + 1;
+		for (int d = c + 1; d < n; ++d) {
+			mp[nums[d] - nums[c]]++;
+		}
+		for (int a = 0; a < b; ++a) {
+			ans += mp[nums[a] + nums[b]];
+		}
+	}
+	return ans;
+}
+
 
 // 472. 连接词
-class Solution472 {
-public:
-	vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+// 使用trie-tree 前缀树   给个shared_ptr的实现
+//  每个单词的 结尾给个end标记
 
+class Solution472 {
+private:
+	struct TrieTree {
+		bool isend;
+		vector<std::shared_ptr<TrieTree>> children;
+		TrieTree() :isend(false), children(26, nullptr) {};
+	};
+	std::shared_ptr<TrieTree> root;
+
+	void insert(shared_ptr<TrieTree> ptr, string s, int index) {
+		if (index == s.size()) {
+			ptr->isend = true;
+			return;
+		}
+
+		int temp = s[index] - 'a';
+		if (ptr->children[temp] == nullptr) {
+			ptr->children[temp] = std::make_shared<TrieTree>();
+		}
+		ptr = ptr->children[temp];
+		insert(ptr, s, index + 1);
+	}
+
+	int find(shared_ptr<TrieTree> ptr, string s, int index) {
+		if (ptr != nullptr) {
+			if (ptr->isend) {
+				if (index == s.size()) {
+					return 1;
+				}
+				else {
+					return find(root, s.substr(index), 0);
+				}
+			}
+			else {
+				if (index == s.size() || !ptr->children[s[index] - 'a']) {
+					return -1;
+				}
+				else {
+					return find(ptr->children[s[index] - 'a'], s, index + 1);
+				}
+			}
+		}
+		return -1;
+	}
+
+public:
+	Solution472() :root(std::make_shared<TrieTree>()) {}
+
+	vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+		auto cmp = [&](const string& a, const string& b)->bool{
+			return a.size() < b.size();
+		};
+		sort(words.begin(), words.end(), cmp);
+		vector<string> ans;
+		for (auto& a : words) {
+			int index = 0;
+			shared_ptr<TrieTree> temp = root;
+			while (index < a.size() && index>=0) {
+				index = find(temp, a, index);
+			}
+			if (index == a.size()) {
+				ans.emplace_back(a);
+			}
+			insert(temp, a, 0);
+		}
+		return ans;
 	}
 };
 
 
+// 846. 一手顺子
+// mid 比较简单   排序+ hash   贪心
+// 排序也可以换为  priority_queue  每次取首
+bool isNStraightHand(vector<int>& hand, int groupSize) {
+	// hash记录数量
+	// 贪心法
+	int n = hand.size();
+	if (n % groupSize) {
+		return false;
+	}
+	sort(hand.begin(), hand.end());
+	unordered_map<int, int> mp;
+	for (auto& a : hand) {
+		mp[a]++;
+	}
+	int i = 0;
+	while (i < n) {
+		int temp = hand[i];
+		if (mp[temp] > 0) {
+			mp[temp]--;
+			int next = temp + 1;
+			for (int j = 1; j < groupSize; ++j) {
+				//cout<<temp<<"  "<<next<<endl;
+				if (mp[next] <= 0) {
+					return false;
+				}
+				else {
+					mp[next]--;
+				}
+				next++;
+			}
+		}
+		i++;
+	}
+	return true;
+}
+
+
+// 390. 消除游戏
+// 从左到右，删除第一个数字，然后每隔一个数字删除一个，直到到达列表末尾
+// 从右到左类似
+// 返回最后剩下的一个数字
+int lastRemaining(int n) {
+	int count = 1;
+	int gap = 1;
+	int head = 1;
+	while (n >= 2) {
+		if (count % 2) {  //从左到右
+			head += gap;
+			//cout<<head<<endl;
+		}
+		else {  // 从右到左
+			if (n % 2) {  //奇数
+				head += gap;
+			}
+			//cout<<head<<endl;
+		}
+		gap *= 2;
+		n /= 2;
+		count++;
+	}
+	return head;
+}
+
+
+// zeller公式  蔡勒公式
+string dayOfTheWeek(int day, int month, int year) {
+	// 1971.1.1 星期五, 记录距离该日期过了多少天，倒推周几
+	// case1 zeller 公式
+	vector<string> week{ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+	// 月份范围为3-14,  这一年的1 2月要看做上一年的13  14月，因此年份减1
+	if (month < 3 && month>0) {
+		month += 12;
+		year--;
+	}
+	int c = year / 100;
+	int y = year % 100;
+	int D = (c / 4 - 2 * c + y + (y / 4) + (13 * (month + 1) / 5) + day - 1);
+	while (D < 0) {
+		D += 7;
+	}
+	//cout<<c<<"  "<<y<<"  "<< D <<endl;
+	return week[D % 7];
+}
+
+
+// 913. 猫和老鼠
+// 无向图行走博弈问题
+// 猫赢 return 2   老鼠赢return 1    平局return 0
+class Solution913 {
+private:
+	int n;
+	vector<vector<vector<int>>> mem;    //  mem[c][m]表示  猫在c  老鼠在m  的状态
+	// // 单纯的bfs   超时了  TLE
+	// 记忆化搜索需要保存什么信息
+public:
+	int bfs(vector<vector<int>>& graph, int mouse, int cat, int step) {
+		int count = step % 2;
+
+		if (cat == mouse) {
+			return 2;
+		}
+		if (mouse == 0) {
+			return 1;
+		}
+		if (step > 2 * n) {
+			return 0;
+		}
+
+		if (mem[cat][mouse][step] != -1) {
+			return mem[cat][mouse][step];
+		}
+
+		// 老鼠先走
+		if (!count) {
+			int peace = 0;  //  平局
+			for (auto& m : graph[mouse]) {
+				int res = bfs(graph, m, cat, step + 1);
+				if (res == 1) {
+					mem[cat][mouse][step] = 1;
+					return 1;
+				}
+				if (res == 0) {
+					peace = 1;
+				}
+			}
+
+			// 当前所有位置都没赢且有平局，   平局好过输
+			if (peace) {
+				mem[cat][mouse][step] = 0;
+				return 0;
+			}
+
+			// 老鼠没赢    且  无法达到平局，  那么猫赢了
+			mem[cat][mouse][step] = 2;
+			return 2;
+		}
+
+		// 猫走
+		int peace = 0; //猫平局
+		for (auto& c : graph[cat]) {
+			if (c == 0) {
+				continue;   // 猫进不去洞
+			}
+			int res = bfs(graph, mouse, c, step + 1);
+			if (res == 2) {
+				mem[cat][mouse][step] = 2;
+				return 2;
+			}
+			if (res == 0) {
+				peace = 1;
+			}
+
+		}
+		// 当前所有位置都没赢且有平局，   平局好过输
+		if (peace) {
+			mem[cat][mouse][step] = 0;
+			return 0;
+		}
+		// 老鼠赢
+		mem[cat][mouse][step] = 1;
+		return 1;
+	}
+
+	int catMouseGame(vector<vector<int>>& graph) {
+		this->n = graph.size();
+		this->mem.resize(n, vector<vector<int>>(n,vector<int>(2*n+1, -1)));
+		return bfs(graph, 1, 2, 0);
+	}
+};
 
 
 // 407. 接雨水 II
 // 3D接雨水
+// 边界收缩
 class Solution407 {
 public:
+	using TIII = tuple<int, int, int>;
 	int trapRainWater(vector<vector<int>>& heightMap) {
-		return 0;
+		// 从最外层开始，逐步向内收缩
+		priority_queue<TIII, vector<TIII>, greater<TIII>> que;
+		int m = (int)heightMap.size();
+		int n = (int)heightMap[0].size();
+		vector<vector<int>> visited(m, vector<int>(n, 0));
+		for (int i = 0; i < m; ++i) {
+			for (int j = 0; j < n; ++j) {
+				if (i == 0 || i == m - 1 || j == 0 || j == n - 1) {
+					// 加入初始的边缘
+					que.push(make_tuple(heightMap[i][j], i, j));
+					visited[i][j] = 1;
+				}
+			}
+		}
+
+		vector<vector<int>> step{ {0,1},{0,-1},{1,0},{-1,0} };
+		int ans = 0;
+		while (!que.empty()) {
+			TIII temp = que.top();
+			que.pop();
+			int nxt = INT_MAX;
+			for (int i = 0; i < 4; ++i) {
+				int new_x = get<1>(temp) + step[i][0];
+				int new_y = get<2>(temp) + step[i][1];
+				if (new_x >= 0 && new_x < m && new_y >= 0 && new_y < n && !visited[new_x][new_y]) {
+					// 未越界
+					if (heightMap[new_x][new_y] < get<0>(temp)) {  // 当前位置可蓄水
+						ans += get<0>(temp) - heightMap[new_x][new_y];
+					}
+					visited[new_x][new_y] = 1;
+					que.push(make_tuple(max(get<0>(temp), heightMap[new_x][new_y]), new_x, new_y));    
+					//用max考虑是否注入了水
+				}
+			}
+		}
+		return ans;
 	}
 };
+
+
+// 71. 简化路径
+// 先按 ‘/’划分字符串
+class Solution71 {
+public:
+	string simplifyPath_case1(string path) {
+		// sstream分割字符串
+		stack<string> st;
+		stringstream ss;
+		// istringstream 分割字符串，输入格式
+		// istringstream iss(path);
+		ss << path;
+		string temp;
+		while (getline(ss, temp, '/')) {
+			if (!temp.empty() && temp != "." && temp != "..") {
+				st.emplace(temp);
+			}
+			if (!st.empty() && temp == "..") {
+				st.pop();
+			}
+		}
+
+		if (st.empty()) {
+			return "/";
+		}
+
+		string ans = "";
+		while (!st.empty()) {
+			string temp = st.top();
+			st.pop();
+			ans = "/" + temp + ans;
+		}
+		return ans;
+	}
+
+
+	// 方法2自己手写的split    其他意思类似
+	string simplifyPath_case2(string path) {
+		string ans = "";
+		stack<string> st;
+		
+		auto split = [](const string& s, char tag)->vector<string> {
+			vector<string> ans;
+			string temp;
+			for (auto& a : s) {
+				if (a == tag) {
+					if (temp != "") {
+						ans.push_back(temp);
+					}
+					temp.clear();
+					continue;
+				}
+				temp += a;
+			}
+			ans.push_back(move(temp));
+			return ans;
+		};
+
+		vector<string> vec = split(path, '/');
+		for (auto& a : vec) {
+			if (a == "") {
+				continue;
+			}
+			if (a != "." && a != "..") {
+				st.push(a);
+			}
+			if (!st.empty()&&a == "..") {
+				st.pop();
+			}
+		}
+
+		if (st.empty()) {
+			return "/";
+		}
+
+		while (!st.empty()) {
+			auto a = st.top();
+			st.pop();
+			if (a.empty()) {
+				continue;
+			}
+			ans = "/" + a + ans;
+		}
+		return ans;
+	}
+};
+
+
+//================数值重新排序以满足条件  的问题
+class SolutionArrayResort {
+public:
+	//954. 二倍数对数组
+	bool canReorderDoubled(vector<int>& arr) {
+		map<double, int> mp;
+		for (auto& a : arr) {
+			mp[a]++;
+		}
+
+		for (auto& [key, value] : mp) {
+			if (value == 0) {
+				continue;
+			}
+			if (key < 0) {
+				if (mp[key / 2.0] >= value) {
+					mp[key / 2.0] -= value;
+				}
+				else {
+					return false;
+				}
+			}
+			else {
+				if (mp[key * 2.0] >= value) {
+					mp[key * 2.0] -= value;
+				}
+				else {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+//2007. 从双倍数组中还原原数组
+	vector<int> findOriginalArray(vector<int>& changed) {
+		int n = changed.size();
+		vector<int> ans;
+		if (n % 2) {
+			return ans;
+		}
+
+		unordered_map<double, int> mp;
+		for (auto& a : changed) {
+			mp[a]++;
+		}
+		return ans;
+	}
+
+
+};
+
+
+// 306. 累加数
+// 我对于字符串类的爆搜  做的题太少     字符串爆搜
+class Solution306 {
+public:
+	int n;
+	bool isAdditiveNumber(string num) {
+		this-> n = (int)num.size();
+		for (int i = 0; i < n-2; ++i) {  // 第一个数字的终点
+			if (num[0] == '0' && i > 0) {
+				return false;
+			}
+			for (int j = i + 1; j < n-1; ++j) {  // 第二个数字的终点
+				// 对于dfs, 需要哪些信息
+				// 考虑枚举前两个数字， 确定了  firstbegin = 0  firstend = i  [0,i+1)  
+				// secondbegin = i+1 secondend = j+1  [i+1, j+1)
+
+				// 若第二个数字存在前导0
+				if (num[i + 1] == '0' && j > i + 1) {
+					continue;
+				}
+				LL firstNum = stoll(num.substr(0, i + 1));
+				LL secondNum = stoll(num.substr(i + 1, j - i));
+				if (dfs(num, firstNum, secondNum, j + 1)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool dfs(string& num, LL& firstnum, LL& secondnum, int lastbegin) {
+		if (lastbegin == n) {
+			return true;
+		}
+		for (int i = lastbegin; i < n; ++i) {
+			if (num[lastbegin] == '0' && i > lastbegin) {
+				return false;
+			}
+			LL now = stoll(num.substr(lastbegin, i - lastbegin + 1));
+			if (now > firstnum + secondnum) {
+				return false;
+			}
+			if (now == firstnum + secondnum) {
+				if (dfs(num, secondnum, now, i + 1)) {
+					return true;
+				}
+				else {
+					break;
+				}
+			}
+		}
+		return false;
+	}
+
+	//string stringAdd(string& s1, string& s2) {
+		// 大数加法
+
+	//}
+};
+
+
+
+// 1036. 逃离大迷宫
+class Solution1036 {
+private:
+	vector<vector<int>> step{ {1,0},{-1,0},{0,1},{0,-1} };
+	int max_ele;
+	unordered_map<string, int> blk;
+public:
+	using PII = pair<int, int>;
+	bool bfs(vector<int>& start, vector<int>& end) {
+		unordered_map<string, int> visited;
+		queue<PII> que;
+		que.push(make_pair(start[0], start[1]));
+		visited[to_string(start[0]) + "_" + to_string(start[1])]++;
+		int count = 1;
+		while (!que.empty() && count <= max_ele) {
+			PII temp = que.front();
+			que.pop();
+			int x = temp.first, y = temp.second;
+			for (int i = 0; i < 4; ++i) {
+				int new_x = x + step[i][0];
+				int new_y = y + step[i][1];
+				//cout<<new_x<<" "<<new_y<<endl;
+				if (new_x >= 0 && new_x < 1e6 && new_y >= 0 && new_y < 1e6 && visited[to_string(new_x) + "_" + to_string(new_y)] == 0 && blk[to_string(new_x) + "_" + to_string(new_y)] == 0) {
+					if (new_x == end[0] && new_y == end[1]) {
+						return true;
+					}
+					que.push({ new_x,new_y });
+					visited[to_string(new_x) + "_" + to_string(new_y)]++;
+					count++;
+				}
+			}
+		}
+		//cout<<count<<" "<<que.size()<<" "<<max_ele<<endl;
+		return count > max_ele;
+	}
+
+	bool isEscapePossible(vector<vector<int>>& blocked, vector<int>& source, vector<int>& target) {
+		// 10^6不能爆搜
+		// blocked不能走动的点位数量为  0~200个
+		// 目的是判断能否走到终点，那么只要判断封锁点位是否把初始点(source)给围住就行了
+		// source 和 target 进行   bfs，只要栈内的点的数量大于 blocked.size()， 那就说明blocked围不住了
+		int n = blocked.size();
+		this->max_ele = n * (n - 1) / 2;     ///     这个范围最重要
+		for (auto& a : blocked) {   //  添加禁止位置
+			string temp = to_string(a[0]) + "_" + to_string(a[1]);
+			blk[temp]++;
+		}
+		int a = bfs(source, target);
+
+		if (!a) {
+			return false;
+		}
+		int b = bfs(target, source);
+		if (!b) {
+			return false;
+		}
+		return true;
+	}
+};
+
+
+// 334. 递增的三元子序列
+// 这题实际上就是找   有没有长度为3的递增子序列
+// 使用 300 严格递增子序列的解法 ，只是到长度为三就停止，否则return false
+// 贪心+二分查找
+bool increasingTriplet(vector<int>& nums) {
+	int n = nums.size();
+	if (n == 0) {
+		return 0;
+	}
+	int len = 1;
+	vector<int> b(n + 1);
+	b[len] = nums[0];
+	for (int i = 1; i < n; ++i) {
+		if (nums[i] > b[len]) {
+			b[++len] = nums[i];
+			if (len >= 3) {
+				return true;
+			}
+		}
+		else {
+			int l = 1, r = len;
+			while (l <= r) {
+				int mid = l + (r - l) / 2;
+				if (b[mid] < nums[i]) {
+					l = mid + 1;
+				}
+				else {
+					r = mid - 1;
+				}
+			}
+			b[l] = nums[i];
+		}
+	}
+	return false;
+}
 
 
 // 375. 猜数字大小 II
@@ -9075,16 +9713,50 @@ int getMoneyAmount(int n) {
 
 /**/
 int main() {
-	
-	string s = "abcabcccdd";
-	string t = "ccc";
-	RabinKarp rb;
-	rb.rabinkarp(s, t);
+
+
+
+
+
+
+
 
 
 	return 0;
 }
 
+
+
+	//Solution1036 sol;
+	//vector<vector<int>> blocked{ {10,9},{9,10},{10,11},{11,10} };
+	//vector<int> source{ 0, 0 };
+	//vector<int> target{ 10, 10 };
+	//sol.isEscapePossible(blocked, source, target);
+
+	////Solution306 sol;
+	//string s = "101";
+	//sol.isAdditiveNumber(s);
+
+	//vector<int> vec{ 0,0,1,3,4,2,6,8 };
+	//SolutionArrayResort sa;
+	//sa.findOriginalArray(vec);
+	// 
+	// 
+	//string s = "/a/../../b/../c//.//";
+	//Solution71 sol;
+	//sol.simplifyPath_case2(s);
+
+
+	//vector<string> vec = { "cat","cats","catsdogcats","dog","dogcatsdog","hippopotamuses","rat","ratcatdogcat" };
+	//Solution472 sol;
+	//sol.findAllConcatenatedWordsInADict(vec);
+
+	//string s = "abcabcccdd";
+	//string t = "ccc";
+	//RabinKarp rb;
+	//rb.rabinkarp(s, t);
+	// 
+	// 
 	//Solution1034 sol;
 	//vector<vector<int>> vecs{ {1,2,2},{2,3,2} };
 	//sol.colorBorder(vecs, 0, 1, 3);
