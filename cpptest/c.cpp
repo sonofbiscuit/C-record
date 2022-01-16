@@ -15,6 +15,7 @@
 #include <array>
 #include <deque>
 #include <regex>
+#include <random>
 #include <ctime>
 #include "StlStringChange.h"
 #include <numeric>
@@ -2337,57 +2338,6 @@ int minSideJumps(vector<int>& obstacles) {
 	}
 	return min_ele(dp[n - 1][1], dp[n - 1][2], dp[n - 1][3]);
 }
-
-
-
-//丑数II   264
-int nthUglyNumber(int n) {
-	if (n == 1) {
-		return 1;
-	}
-	int count = 1;
-	//如何确保顺序?
-	//priority_queue每次取出最小值
-	priority_queue<int,vector<int>,greater<int>> pr_que;
-	pr_que.emplace(1);
-	while (n > 0) {
-		int min_ele = pr_que.top();
-		pr_que.pop();
-		pr_que.emplace((min_ele * 2));
-		pr_que.emplace((min_ele * 3));
-		pr_que.emplace((min_ele * 5));
-		n--;
-	}
-	return pr_que.top();
-}
-
-//丑数 方法2
-//dp  三指针
-int nthUglyNumber_case2(int n) {
-	if (n == 1) {
-		return 1;
-	}
-	vector<int> dp(n);
-	dp[1] = 1;
-	int p2 = 1, p3 = 1, p5 = 1;
-	for (int i = 2; i < n; ++i) {
-		int nums1 = p2 * 2, nums2 = p3 * 3, nums3 = p5 * 5;
-		dp[i] = min(min(nums1, nums2), nums3); //找出乘了以后的最小值
-		if (dp[i] == nums1) {
-			p2++;
-		}
-		if (dp[i] == nums2) {
-			p3++;
-		}
-		if (dp[i] == nums3) {
-			p5++; 
-		}//选取了，则后移
-
-	}
-	cout << dp[n - 1] << endl;
-	return dp[n - 1];
-}
-
 
 
 //打家劫舍II   213
@@ -9491,7 +9441,7 @@ public:
 };
 
 
-//================数值重新排序以满足条件  的问题
+//================数值重新排序以满足条件  的问题    还原数组
 class SolutionArrayResort {
 public:
 	//954. 二倍数对数组
@@ -9533,15 +9483,77 @@ public:
 			return ans;
 		}
 
-		unordered_map<double, int> mp;
-		for (auto& a : changed) {
-			mp[a]++;
+		sort(changed.begin(), changed.end());    
+		// 从小到大逐渐查找，未匹配上的放入队列
+		queue<int> que;
+		for(int i = 0;i<n;++i){
+			if (!que.empty() && changed[i] == 2 * que.front()) {
+				ans.emplace_back(que.front());
+				que.pop();
+			}
+			else {
+				que.push(changed[i]);
+			}
+		}
+
+		if (!que.empty()) {
+			ans.clear();
 		}
 		return ans;
 	}
 
 
+// 2122. 还原原数组
+// 和2007比，  多了个枚举间隔K的步骤
+// case1 双指针   或     case2 队列
+
+	vector<int> recoverArray_case1(vector<int>& nums) {
+		int n = nums.size();
+		sort(nums.begin(), nums.end());
+
+		for (int i = 1; i < n; ++i) {
+			if ((nums[i] - nums[0]) % 2 || nums[i] == nums[0]) {
+				continue;
+			}
+
+			vector<int> used(n + 1);
+			used[0] = used[i] = 1;
+			int k = (nums[i] - nums[0]) / 2;  // 枚举个k
+			// i 的作用是枚举k
+			vector<int> ans;
+			ans.emplace_back(nums[0] + k);
+
+			int left = 0, right = i;  // left为low的起点   right为high的起点
+			for (int j = 1; j + j < n; ++j) {  //要找的原数组的数字个数
+				while (used[left]) {
+					++left;   // 找没用过的low数组
+				}
+				// 找到了一个left， 开始找对应的right
+				while (right < n && (used[right] || nums[left] + 2 * k != nums[right])) {
+					++right;
+				}
+
+				if (right == n) {
+					break;
+				}
+
+				//找到了
+				//cout<<k<<" "<<left<<" "<<right<<endl;
+				used[right] = 1;
+				ans.emplace_back(nums[left] + k);
+				++left;
+				++right;
+			}
+			if (ans.size() == n / 2) {
+				return ans;
+			}
+		}
+		return vector<int>{};
+	}
 };
+
+
+
 
 
 // 306. 累加数
@@ -9704,6 +9716,232 @@ bool increasingTriplet(vector<int>& nums) {
 }
 
 
+// 多路归并
+class multimerge {
+public:
+
+	//丑数II   264
+	int nthUglyNumber(int n) {
+		if (n == 1) {
+			return 1;
+		}
+		int count = 1;
+		//如何确保顺序?
+		//priority_queue每次取出最小值
+		priority_queue<int, vector<int>, greater<int>> pr_que;
+		pr_que.emplace(1);
+		while (n > 0) {
+			int min_ele = pr_que.top();
+			pr_que.pop();
+			pr_que.emplace((min_ele * 2));
+			pr_que.emplace((min_ele * 3));
+			pr_que.emplace((min_ele * 5));
+			n--;
+		}
+		return pr_que.top();
+	}
+
+	//丑数 方法2
+	//dp  三指针
+	int nthUglyNumber_case2(int n) {
+		if (n == 1) {
+			return 1;
+		}
+		vector<int> dp(n);
+		dp[1] = 1;
+		int p2 = 1, p3 = 1, p5 = 1;
+		for (int i = 2; i < n; ++i) {
+			int nums1 = p2 * 2, nums2 = p3 * 3, nums3 = p5 * 5;
+			dp[i] = min(min(nums1, nums2), nums3); //找出乘了以后的最小值
+			if (dp[i] == nums1) {
+				p2++;
+			}
+			if (dp[i] == nums2) {
+				p3++;
+			}
+			if (dp[i] == nums3) {
+				p5++;
+			}//选取了，则后移
+
+		}
+		cout << dp[n - 1] << endl;
+		return dp[n - 1];
+	}
+
+// 373. 查找和最小的K对数字
+	//给定两个以升序排列的整数数组 nums1 和 nums2 , 以及一个整数 k 。
+	//定义一对值 (u, v)，其中第一个元素来自 nums1，第二个元素来自 nums2 。
+	// 找到和最小的k个数对
+	vector<vector<int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+		int m = nums1.size();
+		int n = nums2.size();
+
+		auto cmp = [&](const auto& a, const auto& b)->bool {
+			return nums1[a.first] + nums2[a.second] > nums1[b.first] + nums2[b.second];
+		};
+
+		priority_queue<PII, vector<PII>, decltype(cmp)> que(cmp);
+
+		for (int i = 0; i < min(m, k); ++i) {
+			que.emplace(make_pair(nums1[i], nums2[0]));  // 先取nums1中的最小值和nums2中的所有数相加
+			// 后续每次取和最小的一组，更新下一位
+		}
+
+		vector<vector<int>> ans;
+		while (!que.empty() && k > 0) {
+			auto temp = que.top();
+			ans.push_back({ nums1[temp.first], nums2[temp.second] });
+			que.pop();
+			if (temp.second + 1 < n) {
+				que.push(make_pair(temp.first, temp.second + 1));
+			}
+			--k;
+		}
+		return ans;
+	}
+};
+
+
+// 5982. 解决智力问题
+// dp的查（填）表法  和  刷表法
+// 查（填）表就是由谁而来（在DP转移过程中，每个状态是由它之前的状态推导而来
+// 刷表就是向下推进（每个状态产生其他的新状态
+/*
+	也是个可选可不选的问题，但是选了之后，一段时间内不能再做选择
+	我认为可以理解为打家劫舍问题的一个拓展版本， 可归纳
+*/
+class Solution5982 {
+private:
+	int len;
+public:
+	// case1 给个查（填）表法， 即
+	long long mostPoints_case1(vector<vector<int>>& questions) {
+		// 考虑当前的状态由谁而来
+		// 从后往前考虑，注意越界问题, dp[i]代表的是到位置i的最大得分
+		int len = questions.size();
+		vector<long long> dp(len + 1, 0);
+		for (int i = len - 1; i >= 0; --i) {
+			int last = i + questions[i][1] + 1;
+			dp[i] = max(dp[i + 1], last >= len ? questions[i][0] : dp[last] + questions[i][0]);
+			// max(不选当前位置，那么等于上一个位置， 选当前位置)
+			// 当前位置，是由前一个位置更新而来,可以理解为，前一个位置也是后一个位置加上他的得分而来
+		}
+		return dp[0];
+	}
+
+	// case2 给个刷表法， 即
+	long long mostPoints_case2(vector<vector<int>>& questions) {
+		// 考虑当前状态如何影响下一状态
+		int len = questions.size();
+		vector<long long> dp(len, 0);
+		for (int i = 0; i < len; ++i) {
+			int nxt = i + questions[i][1];  //下一状态
+			if (nxt < len) {  //能转移到下一位置
+				dp[nxt] = max(dp[nxt], dp[i] + questions[i][0]);  //选了当前位置，下一位置被影响了
+			}
+			else {  //不能转移到下一位置,那么当前位置为最后的位置，记录和
+				dp[len] = max(dp[len], dp[i] + questions[i][0]);
+			}
+			// 若此时不选当前位置,那么下一位置为i+1
+			dp[i + 1] = max(dp[i], dp[i + 1]);
+		}
+		return dp[len];
+	}
+
+	// case3 给dfs的方法
+	// 最朴素的dfs会超时
+	long long mostPoints_case3(vector<vector<int>>& questions) {
+		this->len = (int)questions.size();
+		long long ans = dfs(questions, 0, 0, 0);
+		return ans;
+	}
+
+	long long dfs(vector<vector<int>>& questions, int sum, int index, int tag) {
+		/*
+			question 
+			sum：当前的和
+			index：当前问题的下标
+			tag: 标记现在禁止选取的限制是否已经解除
+		*/
+
+		if (index == questions.size()) {
+			return sum;
+		}
+
+		int a = 0, b = 0, c = 0;  
+		// a代表之已经选过了，现在无法再选
+		// b代表现在可以选，并且选了的操作
+		// c代表现在可以选但是没有选
+		if (tag > 0) {
+			a += dfs(questions, sum, index + 1, --tag);
+		}
+		else {
+			b+= dfs(questions, sum+questions[index][0], index + 1, questions[index][1]);  //选
+			c+= dfs(questions, sum, index + 1, 0);  //不选
+		}
+		return max(a, max(b, c));
+	}
+};
+
+
+
+// 382. 链表随机节点
+// 类型为不知道容器的大小，但是要从中随机选择出k个数字。 
+// 可用于数据库的数据选择 或 文本读取等。 
+// 1、只能顺序读取  2、不可一次项读取到内存中
+// 蓄水池抽样算法
+/*
+	蓄水池算法
+*/
+vector<int> reservoir(vector<int>& vec, int k) {
+	// 假设不知道vec的size是多少
+	// 从中取出k个数字, k确定小于vec
+	vector<int> ans;
+	int count = 0;
+	while (count<k) {
+		ans.push_back(vec[count]);
+		++count;
+	}
+	// 开始随机替换, 概率为 k/i 当前为第i行
+	for (vector<int>::iterator begin = vec.begin() + k + 1; begin < vec.end();++begin) {
+		uniform_int_distribution<unsigned> u(0, count);
+		default_random_engine e;
+		int index = u(e);
+		if (index < k) {
+			static uniform_int_distribution<unsigned> p(0, k-1);
+			static default_random_engine q;
+			int line = p(q);
+			ans[line] = *begin;
+		}
+		++count;
+	}
+	return ans;
+}
+// 若抽取一个数字的话
+int pool_1(vector<int>& vec) {
+	int ans;
+	int count = 0;
+	// 开始随机替换, 概率为 1/i 当前为第i行
+	for (auto& a : vec) {
+		count++;
+		static uniform_int_distribution<unsigned> u(0, 10);
+		static default_random_engine e;
+		float index = (float)u(e) / 10.0;
+		if (index < 1.0 / float(count)) {   // 第一个元素肯定选取，第二个元素有1/i的概率替换掉第一个元素，后续类似
+			ans = a;
+		}
+	}
+	return ans;
+}
+
+
+
+// 378. 有序矩阵中第 K 小的元素
+
+
+
+
+
 // 375. 猜数字大小 II
 int getMoneyAmount(int n) {
 	return 0;
@@ -9715,7 +9953,8 @@ int getMoneyAmount(int n) {
 int main() {
 
 
-
+	vector<int> v{ 5,7,2,4,6,8,9,23,6,8,9,54,4, 5,7,2,4,6,8,9,23,6,8,9,54,4 };
+	reservoir(v, 8);
 
 
 
