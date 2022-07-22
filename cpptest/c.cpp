@@ -380,7 +380,7 @@ int wiggleMaxLength(vector<int>& nums) {
 
 
 
-
+// 快速排序
 bool quicksort(vector<int>& vec, int low, int high) {
 	if (low >= high) {
 		return false;
@@ -3717,7 +3717,7 @@ public:
 		int i = left - 1;
 		for (int j = left; j < right; ++j) {
 			if (nums[j] <= nums[right]) {
-				swap(nums[++i], nums[j]); //很巧妙
+				swap(nums[++i], nums[j]); //很巧妙， 统计了有多少个比pivot（即提前交换过去的right）大的
 			}
 		}
 		swap(nums[right], nums[i+1]);
@@ -6157,7 +6157,7 @@ struct TreeNode {
 	TreeNode(int x, TreeNode* left, TreeNode* right) :val(x), left(left), right(right) {};
 };
 
-class Solution {
+class Solutiontt {
 public:
 	unordered_map<int, vector<int>> gra;
 	vector<int> ans;
@@ -7533,7 +7533,7 @@ public:
 			if (visited[i] || (i > 0 && !visited[i - 1] && nums[i - 1] == nums[i])) {  // 最重要的地方
 				continue;
 			}
-			//若有相同数字，前一个数字的情况考虑过后，才会考虑第二个重复的数字
+			// 若有相同数字，前一个数字的情况考虑过后，才会考虑第二个重复的数字
 			// 那么i>0 && !visited[i-1] && nums[i-1] == nums[i] 就避免了相同数字重复情况的出现
 			// 因为 !visited[i-1] 表示前一个数已经遍历过结束了
 			temp.push_back(nums[i]);
@@ -9935,6 +9935,91 @@ int pool_1(vector<int>& vec) {
 }
 
 
+// 2013.检测正方形
+// 一个 双层哈希表   的设计题
+class DetectSquares {
+public:
+	//正方形不是长方形
+	unordered_map<int, unordered_map<int, int>> mp;
+	// {横坐标，{纵坐标，该点的数量}}
+	DetectSquares() {
+
+	}
+
+	void add(vector<int> point) {
+		int x = point[0];
+		int y = point[1];
+		mp[x][y]++;  //[x,y]点++
+	}
+
+	int count(vector<int> point) {
+		int x = point[0];
+		int y = point[1];
+		if (!mp.count(x)) {
+			return 0;
+		}
+		// 找横坐标相同的点
+		int ans = 0;
+		for (auto &[y1, count]:mp[x]) {
+			if (y1 != y) {  //横坐标相同的点的纵坐标
+				int edge = y1 - y;  //负也不影响，那就+变-  -变+
+				// 下一个点是  (x+d,y) (x+d,y1)  或 (x-d,y)  (x-d,y1)
+				// 因为存在重复点，因此要做乘法
+				ans += (mp[x + edge].count(y) ? mp[x + edge][y] : 0) * (mp[x + edge].count(y1) ? mp[x + edge][y1] : 0) * (mp[x].count(y1) ? mp[x][y1] : 0);
+				ans += (mp[x - edge].count(y) ? mp[x - edge][y] : 0) * (mp[x - edge].count(y1) ? mp[x - edge][y1] : 0) * (mp[x].count(y1) ? mp[x][y1] : 0);
+			}
+		}
+		return ans;
+	}
+};
+
+
+//386. 字典序排数
+vector<int> lexicalOrder_case1(int n) { //递归
+	// 1-> 10->100  101...->11->110 111....  2->20... 21 ...
+	// 一共 n 个数字
+	vector<int> ans;
+
+	function<void(vector<int>& vec, int num, int n)> dgt = [&](vector<int>& vec, int num, int n)->void {
+		if (num > n) {
+			return;
+		}
+		vec.push_back(num);
+		for (int i = 0; i < 10; ++i) {
+			dgt(vec, num * 10 + i, n);
+		}
+	};
+
+	for (int i = 1; i < 10; ++i) {
+		dgt(ans, i, n);
+	}
+	return ans;
+}
+
+// 这题处理进位的方法好巧妙
+vector<int> lexicalOrder_case2(int n) {
+	// 1-> 10->100  101...->11->110 111....  2->20... 21 ...
+	// 一共 n 个数字
+	// eg  若到达了109， 第二位要发生进位了， 处理进位使用/10  +1
+	vector<int> ans;
+	int j = 1;
+	for (int i = 0; i < n; ++i) {  // n个数
+		ans.push_back(j);
+		if (j * 10 <= n) {
+			j *= 10;
+		}
+		else {
+			// 越界则倒退回来
+			while (j + 1 > n || j % 10 == 9) {
+				j /= 10;
+			}
+			++j;  // 进位  若n=110, 当num=109， 按照字典序，下一位为11
+			// 109/10=10， 10+1->11,   
+		}
+	}
+
+	return ans;
+}
 
 // 378. 有序矩阵中第 K 小的元素
 
@@ -9948,23 +10033,3426 @@ int getMoneyAmount(int n) {
 }
 
 
+class tests {
+private:
+	typedef shared_ptr<tests> ptr;
+	int a = 0;
+	int b = 1;
+public:
+};
 
-/**/
+
+// 给定坐标系第一象限的点
+// 返回所给的点集中满足右上方没有集合中其他点的  所有点
+/*
+1 2
+5 3
+4 6
+7 5
+9 0
+
+满足条件的是
+4 6
+7 5
+9 0
+*/
+class Dot {
+public:
+	int max_y;
+	vector<PII> vec;
+	vector<PII> ans;
+	vector<PII> getDot(vector<PII>& v) {
+		auto cmp = [&](const PII& a, const PII& b)->bool {
+			return a.second >= b.second;
+		};
+
+		sort(v.begin(), v.end(), cmp);
+		int last_x = -1;
+		int last_y = 1e9;
+		for (auto& a : vec) {
+
+			if (a.second<last_y && a.first>last_x) {
+				last_x = a.first;
+				last_y = a.second;
+				ans.emplace_back(a);
+			}
+		}
+		return ans;
+	}
+};
+
+/*
+int main(){
+  int N;
+  cin N;
+  Dot dt;
+  while(N){
+	int x, y;
+	cin >> x >> y;
+	dt.vec.emplace_back(make_pair(x,y));
+  }
+  dt.getDot(dt.vec);
+  return 0;
+}
+*/
+
+
+/*
+给定一个数组序列, 需要求选出一个区间, 使得该区间是所有区间中经过如下计算的值最大的一个：
+区间中的 最小数 * 区间所有数的和 最后程序输出经过 计算后的最大值 即可，不需要输出具体的区间。
+如给定序列  [6 2 1]则根据上述公式, 可得到所有可以选定各个区间的计算值:
+[6] = 6 * 6 = 36;
+[2] = 2 * 2 = 4;
+[1] = 1 * 1 = 1;
+[6,2] = 2 * 8 = 16;
+[2,1] = 1 * 3 = 3;
+[6, 2, 1] = 1 * 9 = 9;
+从上述计算可见选定区间 [6] ，计算值为 36， 则程序输出为 36。
+区间内的所有数字都在[0, 100]的范围内;
+*/
+
+int count_max(vector<int> vec) {
+	int n = vec.size();
+	sort(vec.begin(), vec.end());
+	vector<int> presum(n+1);
+	presum[0] = vec[0];
+	for (int i = 0; i < n;++i) {
+		presum[i+1] = presum[i] + vec[i];
+	}
+	// [i,j] = presum[j+1]-presum[i]
+	long long max_num = 0;
+	for (int i = 0; i < n; ++i) {
+		// 最小值起始位置
+		for (int j = i; j < n; ++j) {
+			// 最小值的结束位置
+			long long temp = (presum[j + 1] - presum[i]) * vec[i];
+			max_num = max(temp, max_num);
+		}
+	}
+	return max_num;
+}
+
+/*
 int main() {
+	int N;
+	cin >> N;
+	int x;
+	vector<int> vec;
+	while (N) {
+		cin >> x;
+		vec.push_back(x);
+		--N;
+	}
+	return count_max( vec);
+}*/
 
 
-	vector<int> v{ 5,7,2,4,6,8,9,23,6,8,9,54,4, 5,7,2,4,6,8,9,23,6,8,9,54,4 };
-	reservoir(v, 8);
+void finishJob(int coder_num, vector<vector<int>>& jobs) {
+	int n = jobs.size();
+	sort(jobs.begin(), jobs.end(), [&](const vector<int>& a, const vector<int>& b)->bool {return a[1] < b[1]; });
+
+	// 需要不断更新当前时间点的输入的idea
+	std::function<bool(const vector<int>& a, const vector<int>& b)> cmp =
+		[&](const vector<int>& a, const vector<int>& b)->bool {
+		return a[3] == b[3] ? a[0] > b[0] : a[3] > b[3];
+	};
+	priority_queue<vector<int>, vector<vector<int>>, decltype(cmp)> que(cmp);
+
+	int time = 0;
+	int i = 0;
+	// 初始工作集合
+
+	std::function<bool(const PII& a, const PII& b)> cmp1 = [&](const PII& a, const PII& b)->bool {return a.first > b.first; };
+	priority_queue <PII, vector<PII>, decltype(cmp1) > coder_end(cmp1);
+	int temp = coder_num;
+	vector<int> ans(n);
+	for (; time <= jobs[n-1][1] || !coder_end.empty(); ++time) {
+		// 查看当前是否有满足的工作
+		while (i < n && jobs[i][1] <= time) {
+			que.push(jobs[i]);
+			i+=1;// 记录一下当前工作的位置
+		}
+
+		// 看是否有coder完成工作
+		while (!coder_end.empty() && coder_end.top().first <= time) {
+			ans[coder_end.top().second-1] = time;
+			coder_end.pop();
+			++temp;
+		}
+
+
+		// 执行目前能做的工作
+		while (temp > 0 && !que.empty()) {
+			temp--;
+			coder_end.push(make_pair(que.top()[3] + time, que.top()[4]));   // push进去  结束时间，任务index
+			que.pop();
+		}
+	}
+	for (std::vector<int>::iterator a = ans.end()-1; a >= ans.begin();--a) {
+		cout << *a << endl;
+		if (a == ans.begin()) {
+			break;
+		}
+	}
+	return;
+}
+
+/*
+* Test case  
+2 2 5
+1 1 1 2
+1 2 1 1
+1 3 2 2
+2 1 1 2
+2 3 5 5
+* 
+int main() {
+	int PM, Coder, Idea;
+	cin >> PM >> Coder >> Idea;
+	vector<vector<int>> vec(Idea, vector<int>(5));
+	int PmIdx, BeginTime, Pr, Need;
+	while (Idea) {
+		cin >>vec[Idea-1][0] >> vec[Idea-1][1] >> vec[Idea-1][2] >> vec[Idea-1][3];
+		vec[Idea - 1][4] = Idea;
+		Idea--;
+	}
+	finishJob(Coder, vec);
+	return 0;
+}
+*/
+
+// 零钱兑换（力扣322）
+// 一维dp
+int coinChange(vector<int>& coins, int amount) {
+	if (amount == 0) {
+		return 0;
+	}
+	int n = coins.size();
+	vector<int> dp(amount + 1, amount + 1);
+	dp[0] = 0;
+	for (int i = 1; i <= amount; ++i) {
+		for (int j = 0; j < n; ++j) { //coins
+			if (i >= coins[j]) {
+				dp[i] = min(dp[i - coins[j]] + 1, dp[i]);
+			}
+		}
+	}
+	return dp[amount] > amount ? -1 : dp[amount];
+}
+
+
+// 518 零钱兑换2
+//请你计算并返回可以凑成总金额的硬币组合数。
+/*
+int change(int amount, vector<int>& coins) {
+	if (amount == 0) {
+		return 1;
+	}
+	int n = coins.size();*/
+	// 状态：金额，可选择的物品
+	// 选择：选取和不选取
+	/*
+		for  状态1
+			for 状态2
+				dp[状态1][状态2]
+		若只使用前 i 个物品（可以重复使用），当背包容量为 j 时，有 dp[i][j] 种方法可以装满背包。
+	*/
+	/*
+	vector<vector<int>> dp(n + 1, vector<int>(amount + 1, 0));
+	for (int i = 0; i <= n; ++i) {
+		dp[i][0] = 1;
+	}
+
+	for (int i = 1; i <= n; ++i) {  // 硬币的index  ，i=1表示使用第一个
+		for (int j = 1; j <= amount; ++j) {   //金额
+			if (j >= coins[i - 1]) {  // 选了上一个才到当前步骤
+				dp[i][j] = dp[i - 1][j] + dp[i][j - coins[i - 1]]; // 不选 + 选
+			}
+			else {
+				dp[i][j] = dp[i - 1][j];  //上一个没选
+			}
+		}
+	}
+	return dp[n][amount];
+}
+
+*/
+
+
+
+//821. 字符的最短距离
+vector<int> shortestToChar(string s, char c) {
+	// 每个位置左右两侧可能都会出现字符c
+	int n = s.size();
+	int idx = -n;
+	vector<int> ans(n);
+	for (int i = 0; i < n; ++i) {  //左侧
+		if (s[i] == c) {
+			idx = i;
+		}
+		ans[i] = i - idx;
+	}
+
+	idx = 2 * n;
+	for (int i = n - 1; i >= 0; --i) { // 右侧
+		if (s[i] == c) {
+			idx = i;
+		}
+		ans[i] = min(ans[i], idx - i);
+	}
+	return ans;
+}
+
+// 388. 文件的最长绝对路径
+// 模拟题
+int lengthLongestPath(string input) {
+	// 根据 \t\t..的个数来确定层数，一旦减少就相当于回退到上一目录了
+	// 根据 \n 来划分input
+	vector<string> ipt;
+	stringstream ss;
+	ss << input;
+	string substr;
+	while (getline(ss, substr, '\n')) {    // stringstream 实现字符串分割
+		ipt.push_back(substr);
+	}
+	unordered_map<int, vector<string>> mp;
+	int ans = 0;
+	string pre;  // 上一级string
+	int pre_count = 0;   // 上一级层数编号 
+	for (auto& a : ipt) {
+		int count = 0;
+		int idx = 0;
+		int tag = 0;
+		for (int i = 0; i < a.size(); ++i) {
+			if (a[i] == '\t') {
+				count += 1;
+				idx = i + 1;
+			}
+			if (a[i] == '.') {  //文件
+				tag = 1;
+			}
+		}
+		if (count > pre_count) {  // 产生了层的变化
+			mp[count].push_back(mp[count-1].back() + "\\" + a.substr(idx));
+		}
+		else {
+			mp[count].push_back(a.substr());
+		}
+
+		if (tag) {
+			ans = max(ans, static_cast<int>(mp[count].back().size()));
+		}
+	}
+	return ans;
+}
+
+
+// 2245. 转角路径的乘积中最多能有几个尾随零
+// 尾随0的数量，取决于因数中5和2的个数。 min(num2, num5)。
+// 图中有一个拐点，枚举路径不好枚举，直接枚举拐点
+int maxTrailingZeross(vector<vector<int>>& grid) {
+	int m = grid.size();  // 行
+	int n = grid[0].size(); // 列
+	// 保存各行各列的前缀和
+	vector<vector<int>> col2(m + 1, vector<int>(n + 1)); // 列前缀
+	vector<vector<int>> row2(m + 1, vector<int>(n + 1)); // 行前缀
+	vector<vector<int>> col5(m + 1, vector<int>(n + 1)); // 列前缀
+	vector<vector<int>> row5(m + 1, vector<int>(n + 1)); // 行前缀
+	for (int i = 1; i <= m; ++i) {  // 行
+		for (int j = 1; j <= n; ++j) { // 列
+			int x = grid[i-1][j-1];
+			int num2 = 0, num5 = 0;
+			while (x % 2 == 0) {
+				++num2;
+				x /= 2;
+			}
+			while (x % 5 == 0) {
+				++num5;
+				x /= 5;
+			}
+			
+			col2[i][j] = col2[i - 1][j] + num2;
+			row2[i][j] = row2[i][j - 1] + num2;
+			col5[i][j] = col5[i - 1][j] + num5;
+			row5[i][j] = row5[i][j - 1] + num5;
+		}
+	}
+
+	int ans = 0;
+	// 枚举拐点
+	for (int i = 1; i <= m; ++i) {
+		for (int j = 1; j <= n; ++j) {
+			// 从左走向拐点，在向上走
+			ans = max(ans, min(row2[i][j] + col2[i - 1][j], row5[i][j] + col5[i - 1][j]));
+			// 从左走向拐点，在向下走
+			ans = max(ans, min(row2[i][j] + col2[m][j] - col2[i][j], row5[i][j] + col5[m][j] - col5[i][j]));
+			// 从右走向拐点，在向上走
+			ans = max(ans, min(row2[i][n] - row2[i][j] + col2[i][j], row5[i][n] - row5[i][j] + col5[i][j]));
+				// 从右走向拐点，在向下走
+			ans = max(ans, min(row2[i][n] - row2[i][j] + col2[m][j] - col2[i-1][j], row5[i][n] - row5[i][j] + col5[m][j] - col5[i-1][j]));
+		}
+	}
+	return ans;
+}
+
+
+
+
+//396. 旋转函数
+/**
+ * 把数组逆转跟把乘数逆转是一样的，可以看出有如下规律
+ *   4     3     2     6
+ *
+ *  0*4   1*3   2*2   3*6   F(0)
+ *
+ *  3*4   0*3   1*2   2*6   F(1) = F(0) - SUM(data) + N * data[0];
+ *
+ *  2*4   3*3   0*2   1*6   F(2) = F(1) - SUM(data) + N * data[1];
+ *
+ *  1*4   2*3   3*2   0*6   F(3) = F(2) - SUM(data) + N * data[2];
+ *
+ */
+class Solution396 {
+public:
+	int maxRotateFunction_case1(vector<int>& nums) {  // 暴力法会超时
+		int n = nums.size();
+		long long ans = INT_MIN;
+		vector<int>vec(n);
+		iota(vec.begin(), vec.end(), 0);
+		for (int i = 0; i < n; ++i) {
+			long long temp = 0;
+			for (int j = 0; j < n; ++j) {
+				temp += (vec[j] % n) * nums[j];
+				vec[j] += 1;
+			}
+			ans = max(ans, temp);
+		}
+		return static_cast<int>(ans);
+	}
+
+	int maxRotateFunction_case2(vector<int>& nums) {
+		int n = nums.size();
+		int summ = accumulate(nums.begin(), nums.end(), 0);
+		int ans = 0;
+		for (int i = 0; i < n; ++i) {
+			ans += i * nums[i];
+		}
+		int a = ans;
+		for (int i = 1; i < n; ++i) {
+			int temp = a + summ - n * nums[n - i];
+			ans = max(ans, temp);
+			a = temp;
+		}
+		return ans;
+	}
+};
+
+
+
+// 凸包算法
+// 凸包算法-Graham scan
+class Point {
+public:
+	Point() :x(0), y(0) {}
+	Point(float xx, float yy) :x(xx), y(yy) {}
+	bool operator==(const Point& p) {
+		if (abs(p.x - this->x) < 0.00001 && abs(p.y - this->y < 0.00001)) {
+			return true;
+		}
+		return false;
+	}
+	bool operator !=(const Point& p) {
+		return !(*this == p);
+	}
+	friend std::ostream& operator<<(std::ostream out, Point& p) {
+		out << "x: " << p.x << "   y:" << p.y << std::endl;
+		return out;
+	}
+
+	float x;
+	float y;	
+};
+
+// 1866. 恰有 K 根木棍可以看到的排列数目
+// 有 n 根长度互不相同的木棍，长度为从 1 到 n 的整数。请你将这些木棍排成一排，并满足从左侧 可以看到 恰好 k 根木棍。
+// 从左侧 可以看到 木棍的前提是这个木棍的 左侧 不存在比它 更长的 木棍。
+class Solution1866 {
+public:
+	int M = 1e9 + 7;
+	int rearrangeSticks(int n, int k) {
+		// dp[i][j] 表示i根木棍，能看到j根的方案数目
+		vector<vector<long long>> dp(n + 1, vector<long long>(k + 1));
+		dp[1][1] = 1;
+		for (int i = 2; i <= n; ++i) {
+			for (int j = 1; j <= min(i, k); ++j) {
+				dp[i][j] = dp[i - 1][j - 1];
+				dp[i][j] += (dp[i - 1][j] * (i - 1)) % M;
+				dp[i][j] %= M;
+				// i-1是因为，当目前排列是12345，此时已经能够看到j根
+				// 再插入木板6，就可以看到j+1根
+				// 此时就可以通过调整最短的模板1，来达到再次看到j根的目的，
+				// 可以看到木板1可以插到其余每块模板的后边， 共i-1种情况
+			}
+		}
+		return static_cast<int>(dp[n][k]);
+	}
+};
+
+
+
+// 计算其余点相对于初始点的极角
+// 这个写法没处理好最后在一行线上的点，会有遗漏
+class PolarAngle {
+public:
+	PolarAngle() :basePoint(Point()) {}
+	PolarAngle(Point& p) :basePoint(p) {}
+	
+	// 计算cos
+	float ccos(const Point& base, const Point& q) {
+		float xdis = q.x - base.x;
+		float ydis = q.y - base.y;
+		float dis = std::sqrtf(xdis * xdis + ydis * ydis);
+		return xdis / dis;
+	}
+
+	bool operator()(const Point& a, const Point& b) {
+		return ccos(basePoint, a) > ccos(basePoint, b);
+	}
+
+private:
+	Point basePoint;
+};
+
+std::vector<Point> convexHull(std::vector<pair<float, float>>& points) {
+	int n = points.size();
+	vector<Point> vec(n);
+	for (int i = 0; i < n; ++i) {
+		vec[i] = Point(points[i].first, points[i].second);
+	}
+	if (n <= 3) {
+		return vec;
+	}
+
+	auto lessY = [&](const auto& a, const auto& b)->bool {
+		return a.y < b.y;
+	};
+
+	auto antiCW = [&](const Point & a, const Point & b, const Point & c)->bool {
+		Point ab(b.x - a.x, b.y - a.y);
+		Point bc(c.x - b.x, c.y - b.y);
+		return (ab.x * bc.y - ab.y * bc.x)>=0;
+	};
+
+	// 把 y 最小的起始点找出来
+	std::vector<Point>::iterator init_point = min_element(vec.begin(), vec.end(), lessY);
+	std::iter_swap(init_point, vec.begin());
+	std::sort(vec.begin() + 1, vec.end(), PolarAngle(vec.front()));
+
+	stack<Point> st;
+	for (auto i = vec.begin(); i != vec.end();++i) {
+		if (i == vec.begin() || i == vec.begin() + 1) {
+			st.push(*i);
+			continue;
+		}
+		Point p1 = st.top(); st.pop();
+		while (!st.empty() && !antiCW(p1, st.top(), *i)) {
+			p1 = st.top();
+			st.pop();
+		}
+		st.push(p1);
+		st.push(*i);
+	}
+	return vec;
+}
+
+
+// 587. 安装栅栏
+// graham 凸包算法，   这种写法处理了最后在一行上的点
+class Solution587 {
+public:
+	int anti_Clockwise(const vector<int>& a, const vector<int>& b, const vector<int>& c) {
+		return (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+		// 大于0说明是逆时针方向
+	}
+	int distance(const vector<int>& a, const vector<int>& b) {
+		return (b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]);
+	}
+
+
+	vector<vector<int>> outerTrees(vector<vector<int>>& trees) {
+		// 凸包算法 
+		int n = trees.size();
+		if (n <= 3) {
+			return trees;
+		}
+
+		int base = 0;
+		// 找到y最小的点
+		for (int i = 0; i < n; ++i) {
+			if (trees[i][1] < trees[base][1]) {
+				base = i;
+			}
+		}
+		swap(trees[base], trees[0]);
+		// 按照极角的大小进行排序
+		sort(trees.begin() + 1, trees.end(), [&](const vector<int>& a, const vector<int>& b)->bool {
+			int diff = anti_Clockwise(trees[0], a, b) - anti_Clockwise(trees[0], b, a);
+			if (diff == 0) { //一条线
+				return distance(trees[0], a) < distance(trees[0], b);
+			}
+			else {
+				return diff > 0;
+			}
+			});
+
+		/* 对于凸包最后且在同一条直线的元素按照距离从小到大进行排序 */
+		int r = n - 1;
+		while (r >= 0 && anti_Clockwise(trees[0], trees[n - 1], trees[r]) == 0) {
+			r--;
+		}
+		for (int l = r + 1, h = n - 1; l < h; l++, h--) {
+			swap(trees[l], trees[h]);
+		}
+
+		stack<int> st;
+		st.emplace(0);
+		st.emplace(1);
+		for (int i = 2; i < n; ++i) {
+			int top = st.top();
+			st.pop();
+			// 顺时针，则弹出
+			while (!st.empty() && (anti_Clockwise(trees[st.top()], trees[top], trees[i]) < 0)) {
+				top = st.top();
+				st.pop();
+			}
+			st.emplace(top);
+			st.emplace(i);
+		}
+
+		vector<vector<int>> ans;
+		while (!st.empty()) {
+			ans.emplace_back(trees[st.top()]);
+			st.pop();
+		}
+		return ans;
+	}
+};
+
+
+
+/*
+// define 和 typedef在定义指针时的不同
+#define INT_D int*
+typedef int* int_p;
+
+int main() {
+	INT_D a, b;
+	int_p c, d;
+	cout << "a type: " << typeid(a).name() << endl;
+	cout << "b type: " << typeid(b).name() << endl;
+	cout << "c type: " << typeid(c).name() << endl;
+	cout << "d type: " << typeid(d).name() << endl;
+}
+// 输出时，b的类型为int，而非指针
+*/
+
+
+
+class BB;
+class AA {
+public:
+	shared_ptr<BB> ptr;
+	~AA() {
+		cout << "A delete" << endl;
+	}
+
+};
+class BB {
+public:
+	shared_ptr<AA> ptr;
+	~BB() {
+		cout << "B delete" << endl;
+	}
+};
+void fun() {
+	shared_ptr<AA> pa(new AA());
+	shared_ptr<BB> pb(new BB());
+	pa->ptr = pb;
+	pb->ptr = pa;
+	cout << pa.use_count() << endl;
+	cout << pb.use_count() << endl;
+}
+/*
+int main() {
+	fun();
+	return 0;
+}
+*/
+
+
+// traits
+/*
+template <typename T>
+struct iterator_traits{
+	typedef typename T::value_type value_type;
+};
+
+template <typename T>
+typename iterator_traits<T>::value_type func(T ite) {
+	return *ite;
+}
+
+// partial specialization
+template <typename T>
+struct iterator_traits<T*> {  // 迭代器是个原生指针
+	typedef T value_type;
+};
+
+// 当迭代器是个 pointer-to-const(指向常数对象的指针，如 const int 而非 int)
+// 令其萃取出来的类型为 T 而 非T、
+template <typename T>
+struct iterator_traits<const T*> {
+	typedef T value_type;    // 萃取出来的型别是T而非const T
+};
+// 现在，不论面对的是迭代器，或是原生指针int*， 或是const int*，都能萃取出正确的value_type。
+
+*/
+
+// traits
+// C++  容器中自定义类型 value_type
+template <typename T>
+class Bag {
+public:
+	typedef T value_type;
+	T val;
+	Bag(T value) :val(value) {}
+};
+
+template <typename T>
+class Box {
+public:
+	typedef T value_type;
+	T val;
+	Box(T value) :val(value) {}
+};
+
+template <typename T>
+T::value_type unpack(T container) {
+	cout << container.val <<"  " << typeid(container.val).name() << endl;
+	return container.val;
+}
+/*
+int main() {
+	Bag bg(10);
+	Box bx(20.0);
+	unpack(bg);
+	unpack(bx);
+	return 0;
+}
+*/
+
+
+// 自定义unordered_map 的hash函数
+struct pair_hash {
+	template <typename T1, typename T2>
+	std::size_t operator()(const std::pair<T1, T2>& p) const{
+		auto h1 = std::hash<T1>{}(p.first);
+		auto h2 = std::hash<T2>{}(p.second);
+		return h1 ^ h2;
+	}
+};
+// pair 作为 map 的 key
+unordered_map<pair<int, int>, int, pair_hash> mpp;
+
+
+// 417. 太平洋大西洋水流问题
+// bfs / dfs 边界反向搜索
+class Solution417 {
+public:
+	vector<vector<int>> steps{ {-1,0},{0,1},{1,0},{0,-1} }; // 上 右 下 左
+	vector<vector<int>> pacificAtlantic(vector<vector<int>>& heights) {
+		// 四次bfs， 最后找公共位置（能到达两个海洋的顶点）
+		
+		std::function<void(int, int, vector<vector<int>>&, vector<vector<int>>&)> bfs =
+			[&](int x, int y, vector<vector<int>>& visited, vector<vector<int>>& heights)->void {
+			if (visited[x][y] == 1) {
+				return;
+			}
+			visited[x][y] = 1;
+			int m = heights.size();
+			int n = heights[0].size();
+			for (int i = 0; i < 4; ++i) {
+				int new_x = x + steps[i][0];
+				int new_y = y + steps[i][1];
+				if (new_x >= 0 && new_x < m && new_y >= 0 && new_y<n && heights[new_x][new_y]>=heights[x][y]) {
+					bfs(new_x, new_y, visited, heights);
+				}
+			}
+		};
+
+		int m = heights.size();
+		int n = heights[0].size();
+		vector<vector<int>> vec1(m, vector<int>(n, 0));
+		vector<vector<int>> vec2(m, vector<int>(n, 0));
+		for (int i = 0; i < m; ++i) { // 行遍历
+			bfs(i, 0, vec1, heights); //左
+			bfs(i, n - 1, vec2, heights); //右
+		}
+		for (int i = 0; i < n; ++i) { //列遍历
+			bfs(0, i, vec1, heights); // 上
+			bfs(m-1, i, vec2, heights); // 下
+		}
+		
+		vector<vector<int>> ans;
+		// 找相同的顶点
+		for (int i = 0; i < m; ++i) {
+			for (int j = 0; j < n; ++j) {
+				if (vec1[i][j] & vec2[i][j]) {
+					ans.push_back({ i,j });
+				}
+			}
+		}
+		return ans;
+	}
+};
+
+
+template <class T>
+int compare_test(const T& t1, const T& t2) {
+	return t1 >= t2 ? 1 : -1;
+}
+
+// specialization
+template<>
+int compare_test(const char* const& t1, const char* const& t2)
+{
+	return strcmp(t1, t2);
+}
+
+
+// 类模板
+template <typename T> class Foo_test {
+public:
+	void Bar() {}
+	void Barst(T a) {
+		cout << "barst" << endl;
+	}
+};
+// 特例化
+//  类模板中的成员函数放到类模板定义外写时，语法为
+/*
+template<类型参数表>
+返回值类型 类模板名<类型参数名列表>::成员函数名(参数表)
+{
+...
+}
+*/
+template <>
+void Foo_test<int>::Bar() {
+	cout << "int 特例化" << endl;
+}
+
+/*
+int main() {
+	Foo_test<string> fss;
+	Foo_test<int> fii;
+	fss.Bar();  //使用普通模板，即 Foo<string>::Bar()
+	fii.Bar();  // 使用特例化模板，即Foo<intn>::Bar()
+	return 0;
+}
+*/
+
+
+// 可变参数函数模板
+template<typename T>
+ostream& print(ostream& os, const T& t) {  //流对象不可复制，切记不要忘记引用
+	return os << t;
+}
+template<typename T, typename... args>
+ostream& print(ostream& os, const T& t, const args&... rest) {
+	os << t << " , ";
+	return print(os, rest...);
+}
+
+/*
+int main() {
+	print(cout, "i", "s", 42, 100);
+	// output: i , s , 42 , 100
+	return 0;
+}
+*/
+
+
+// 6049. 含最多 K 个可整除元素的子数组
+int countDistinct(vector<int>& nums, int k, int p) {
+	unordered_map<string, int> mp;
+	for (int i = 0; i < nums.size(); i++) {
+		int count = k;
+		string temp = "";
+		for (int j = i; j < nums.size(); j++) {
+			if (nums[j] >= p && nums[j] % p == 0) {
+				count--;
+			}
+			if (count < 0) {
+				break;
+			}
+			temp += (to_string(nums[j]));
+			temp += ",";
+			// 当前位置可以选
+			mp[temp]++;
+		}
+	}
+	return mp.size();
+}
+
+//=================================================== 双指针解决 子数组/子字符串 的问题   乘积，加法等
+
+//6050. 字符串的总引力
+/*
+分类讨论：
+
+如果 s[i] 之前没有遇到过，那么每个子串的引力值都会增加 1，引力值之和会增加 i，再加上 1，即 s[i] 单独组成的子串的引力值；
+如果 s[i] 之前遇到过，设其上次出现的下标为 j，
+那么向子串 s[0..i-1], s[1..i-1], s[2..i-1],...,s[j..i-1]的末尾添加 s[i] 后，引力值是不会变化的，因为 s[i]s[i] 已经在 s[j]s[j] 处出现过了，
+因此只有i−j−1 个子串的引力值会增加 1，引力值之和会增加 i−j−1，再加上 1，即 s[i]s[i] 单独组成的子串的引力值。
+
+*/
+class Solution6050 {
+public:
+	using LL = long long;
+	long long appealSum(string s) {
+		LL ans = 0l;
+		LL pre_sum = 0l;
+		vector<int> vec(26, -1); //记录每个字符上次出现的位置
+		for (int i = 0; i < s.size(); ++i) {
+			pre_sum += (vec[s[i] - 'a'] == -1 ? i - vec[s[i] - 'a'] : i - vec[s[i] - 'a']);  // 没出现过   出现过
+			// 因为默认下标为-1， 所以少+1
+			vec[s[i] - 'a'] = i;
+			ans += pre_sum;
+		}
+		return ans;
+	}
+};
+
+
+// 713. 乘积小于 K 的子数组
+class Solution713 {
+public:
+	int numSubarrayProductLessThanK(vector<int>& nums, int k) {
+		int n = nums.size();
+		int left = 0, right = 0;
+		int ans = 0;
+		long long temp = 1;
+		while (left <= right && right < n) {
+			temp *= nums[right];
+			while (temp >= k && left <= right) {
+				temp /= nums[left];
+				++left;
+			}
+			ans += right - left + 1;
+			++right;
+		}
+		return ans;
+	}
+};
+
+
+
+// 591. 标签验证器
+// hard
+// 类似于HTML的解析
+class Solution591 {
+public:
+	bool isValid(string code) {
+		/*
+		<tagname>  xxxxxx   </tagname>   ctag   tagname
+		<![CDATA[ xxxxx ]]>   cdata_content(可包含任意字符，均视为常规字符)
+		*/
+		int n = code.size();
+		int i = 0;
+		stack<string> st;
+		while (i < n) {
+			if (code[i] == '<') {  // 边界左侧
+				if (code[i + 1] == '/') {  // 右边界开始，  找 >
+					int right_index = code.find_first_of('>', i + 1);
+					if (right_index == string::npos) {  // 没找到 >
+						return false;
+					}
+					string tag_name = code.substr(i + 2, right_index - i - 2);
+					// 看栈里的tagname是否匹配
+					if (st.empty() || st.top() != tag_name) { // 不匹配
+						return false;
+					}
+					// 匹配
+					st.pop();
+					i = right_index + 1;
+					if (st.empty() && i != n) {  // 栈内已空，如果i未结束，说明在标签外还有内容
+						return false;
+					}
+				}
+				else if(code[i+1] == '!') {  // CDATA左边界开始, 忽略内容，只判断括号 <![CDATA[    ]]>
+					if (st.empty()) {
+						return false;
+					}
+					string left_brackets = code.substr(i, 9);
+					if (left_brackets != "<![CDATA[") {
+						return false;
+					}
+					int right_cdata = code.find("]]>", i);
+					if(right_cdata == string::npos){
+						return false;
+					}
+					// cdata满足括号匹配
+					i = right_cdata + 1;
+				}
+				else {  // 普通的左括号< >, 找到第一个tagname
+					int right_index = code.find(">", i);
+					if (right_index == string::npos) {
+						return false;
+					}
+					string tagname = code.substr(i + 1, right_index - i - 1);
+					// 判断tagname是否合法
+					if (tagname.size() < 1 || tagname.size() > 9) {
+						return false;
+					}
+					if (!all_of(tagname.begin(), tagname.end(), [&](const char& a) {return isupper(a); })) {
+						return false;
+					}
+					st.push(tagname);
+					i = right_index + 1;
+				}
+			
+			}
+			else {
+				if (st.empty()) {
+					return false;
+				}
+				++i;
+			}
+		}
+		return st.empty();
+	}
+};
+
+
+/*
+* 433. 最小基因变化
+将bfs应用到字符串上， 是个很好的例题， 也可以看为最短路径
+keyword： bfs， 字符串bfs，  字符串转变一位
+*/
+class Solution433 {
+public:
+	int minMutation(string start, string end, vector<string>& bank) {
+		// 变换后的序列一定要在bank之中
+		// queue 实现bfs
+		// hashmap 查重
+		// 每次把bank中能直接转换过去（一位不同）的序列加到图中
+		queue<pair<string, int>> que; // int存储当前步数
+		unordered_map<string, int> mp;
+		que.push({ start,0 });
+		mp[start]++;
+
+		auto judge = [&](const string& a, const string& b)->bool {
+			int count = 0;
+			int n = a.size();
+			for (int i = 0; i < n; ++i) {
+				if (a[i] != b[i]) {
+					++count;
+				}
+			}
+			return count == 1;
+		};
+
+		while (!que.empty()) {
+			int len = que.size();
+			for (int i = 0; i < len; ++i) {
+				auto temp = que.front();
+				que.pop();
+				for (auto& a : bank) {
+					if (judge(temp.first, a) && !mp.count(a)) {
+						que.push({ a,temp.second + 1 });
+						mp[a]++;
+						if (a == end) {
+							return temp.second + 1;
+						}
+					}
+				}
+			}
+		}
+		return -1;
+	}
+};
+
+// 好家伙， 和433最小基因变化一模一样
+// 127.单词接龙
+class Solution127 {
+public:
+	int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+		queue<pair<string, int>> que; // int存储当前步数
+		unordered_map<string, int> mp; // 去重
+		unordered_map<string, string> mp1; // 保存前驱节点
+		que.push({ beginWord,0 });
+		mp[beginWord]++;
+
+		auto judge = [&](const string& a, const string& b)->bool {
+			int count = 0;
+			int n = a.size();
+			for (int i = 0; i < n; ++i) {
+				if (a[i] != b[i]) {
+					++count;
+				}
+			}
+			return count == 1;
+		};
+
+		while (!que.empty()) {
+			int len = que.size();
+			for (int i = 0; i < len; ++i) {
+				auto temp = que.front();
+				que.pop();
+				for (auto& a : wordList) {
+					if (judge(temp.first, a) && !mp.count(a)) {
+						que.push({ a,temp.second + 1 });
+						mp[a]++;
+						mp1[a] = temp.first;
+						if (a == endWord) {
+							vector<string> ans{ a };
+							while (a != beginWord) {
+								a = mp1[a];
+								ans.push_back(a);    // 懒得改了，直接把一条路径存进来了
+							}
+							return ans.size();
+						}
+					}
+				}
+			}
+		}
+		return 0;
+	}
+};
+
+// 126. 单词接龙 II
+/* 和127 单词接龙的区别就是， 单词接龙I 只需要输出路径的长度，即使一条路径也满足
+* II 需要输出所有的最短路径，map的去重，只要保证序列一直向前就行，不要回退。
+*/
+class Solution126 {
+public:
+	int step;
+	string beginw;
+	queue<pair<string, int>> que;
+	unordered_map<string, int> mp1; //去重
+	unordered_map<string, vector<string>> mp2; // 保存一个点所有的前缀
+	vector<vector<string>> findLadders(string beginWord, string endWord, vector<string>& wordList) {
+		int n = beginWord.size();
+		que.push({ beginWord,0 });
+		beginw = beginWord;
+		auto judge = [&](const string& a, const string& b)->bool {
+			int count = 0;
+			int n = a.size();
+			for (int i = 0; i < n; ++i) {
+				if (a[i] != b[i]) {
+					++count;
+				}
+			}
+			return count == 1;
+		};
+		
+		step = INT_MAX;
+		unordered_map<string, int> que_count;
+		while (!que.empty()) {
+			int n = que.size();
+			for (int i = 0; i < n; ++i) {
+				auto temp = que.front();
+				que.pop();
+				mp1[temp.first]++;
+				vector<string> rec;
+				for (auto& a : wordList) {
+					if (judge(temp.first, a) && !mp1.count(a)) {
+						rec.push_back(a);
+						mp2[a].push_back(temp.first); // 前继结点
+						if (!que_count.count(a)) {
+							que.push({ a, temp.second + 1 });
+							que_count[a]++;
+						}
+						if (a == endWord) {
+							step = min(step, temp.second + 1);
+						}
+					}
+				}
+			}
+			if (que_count.count(endWord)) {
+				break;
+			}
+		}
+		vector<vector<string>> ans;
+		std::function<void(vector<vector<string>>&, string, vector<string>, int)> getAns = [&](vector<vector<string>>& ans, string node, vector<string> temp, int steps)->void {
+			temp.push_back(node);
+			if (steps > step) {
+				return;
+			}
+			
+			if (steps == step && node == beginw) {
+				reverse(temp.begin(), temp.end());
+				ans.push_back(temp);
+				return;
+			}
+
+			if (mp2.count(node)) {
+				for (auto& a : mp2[node]) {
+					getAns(ans, a, temp, steps+1);
+				}
+			}
+			return;
+		};
+
+		vector<string> temp;
+		if (que_count.count(endWord)) {
+			getAns(ans, endWord, temp, 0);
+		}
+		return ans;
+	}
+};
+
+
+// stable_sort 中， return false时，数字相对位置不变
+// find是查找子串，而find_first_of类似于模式匹配，只要与其中的一个字符匹配就行。
+
+
+//23. 合并K个升序链表
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution123213 {
+public:
+	struct ListNode {
+		int val;
+		ListNode* next;
+		ListNode() : val(0), next(nullptr) {}
+		ListNode(int x) : val(x), next(nullptr) {}
+		ListNode(int x, ListNode* next) : val(x), next(next) {}
+	};
+
+	/**
+	* 方法1 考虑普通两个链表的合并，以第一个链表为基础，逐个合并到第一个链表
+	*/
+	ListNode* mergeTwo(ListNode* a, ListNode* b) {
+		if (a == nullptr || b == nullptr) {
+			return a == nullptr ? b : a;
+		}
+		ListNode head, *tail = &head, *aptr = a, *bptr = b;
+		while (aptr && bptr) {
+			if (aptr->val < bptr->val) {
+				tail->next = aptr;
+				aptr = aptr->next;
+			}
+			else {
+				tail->next = bptr;
+				bptr = bptr->next;
+			}
+		}
+		// 未完的，直接接到后边
+		tail->next = aptr == nullptr ? bptr : aptr;
+		return head.next;
+	}
+
+	ListNode* mergeKLists_case1(vector<ListNode*>& lists) {
+		ListNode* ans = nullptr;
+		for (int i = 0; i < lists.size(); ++i) {
+			ans = mergeTwo(ans, lists[i]);
+		}
+		return ans;
+	}
+
+	/**
+	* 分治法合并，每次合并两个。从lists中从小到大
+	
+	ListNode* merge(vector<ListNode*>& lists, int l, int r) {
+		if (l == r) {
+			return lists[l];
+		}
+
+		int mid = l + (r - l) / 2;
+		mergeTwo()
+	}
+
+	ListNode* mergeKLists_case2(vector<ListNode*>& lists) {
+		
+
+	}*/
+
+
+
+};
+
+
+
+/**
+* 6058. 统计打字方案数
+* dp
+* 思路是按数字分组，判断每组的可能方案，将它们乘起来。例如 222 有四种可能，33 有两种可能，那么 22233 就有 2*4=8 种可能。
+多少种可能是怎么来的？以 ...222(k 个 2) 为例，在它后面继续增加一个 2 可以有：
+直接增加一个 2
+...222(k 个 2) + 2 = ...222(k 个 2) 种可能
+
+新加入的 2 也可以和原来最后一个 2 组合
+...22(k-1 个 2) + 22 = ...22(k-1 个 2) 种可能
+
+也可以和原来最后一个 22 组合
+...2(k-2 个 2) + 222 = ...2(k-2 个 2) 种可能
+把他们都加起来就是 k+1 个 2 的可能方案数，对于数字 7 和 9，他们可以是连续四个字符组合。
+*/
+class Solution6058 {
+public:
+	int MOD = 1e9 + 7;
+	vector<long> vec3;
+	vector<long> vec4;
+	int countTexts(string pressedKeys) {
+		// n最大为100000
+		vec3.resize(100001);
+		vec4.resize(100001);
+		vec3[0] = 1;
+		vec3[1] = 1;
+		vec3[2] = 2;
+		vec3[3] = 4;
+		vec4[0] = 1;
+		vec4[1] = 1;
+		vec4[2] = 2;
+		vec4[3] = 4;
+		for (int i = 4; i < 100001; ++i) {
+			vec3[i] = (vec3[i - 1] + vec3[i - 2] + vec3[i - 3]) % MOD;
+			vec4[i] = (vec4[i - 1] + vec4[i - 2] + vec4[i - 3] + vec4[i - 4]) % MOD;
+		}
+		// 已经计算出了所有长度下  连续重复字符  的组合数
+		// 开始处理原字符， 若为重复序列，判断按键字母长度是3还是4
+		int i = 0;
+		long long ans = 1ll;
+		int n = pressedKeys.size();
+		while (i < n - 1) {
+			int j = i;
+			int len = 1;
+			while (j < n - 1 && pressedKeys[j] == pressedKeys[j + 1]) {
+				++j;
+			}
+			if (pressedKeys[i] == '7' || pressedKeys[i] == '9') {
+				ans = (ans * vec4[j - i + 1]) % MOD;
+			}
+			else {
+				ans = (ans * vec3[j - i + 1]) % MOD;
+			}
+			i = j + 1;
+		}
+		return static_cast<int>(ans);
+	}
+};
+
+
+
+/**
+* 6059. 检查是否有合法括号字符串路径    
+* 一开始我使用二维visited来记录
+* 但是会超时
+* 于是改用  记忆化搜索剪枝
+* visited改为三维，   第三维记录的是此路径的括号值
+*/
+class Solution4444444 {
+public:
+	vector<vector<int>> step{ {1,0},{0,1} };
+	vector<vector<int>> visited;
+	bool hasValidPath(vector<vector<char>>& grid) {
+		int m = grid.size();
+		int n = grid[0].size();
+		int ans = 0;
+		vector<vector<vector<int>>> visited(m, vector<vector<int>>(n, vector<int>(m + n, 0)));
+		int st=0;   // ’（‘加一   ’）‘减一
+
+		std::function<void(vector<vector<char>>&, int, vector<vector<vector<int>>>&,int, int)> dfs = [&](vector<vector<char>>& grid, int st, vector<vector<vector<int>>>& visited,int x, int y)->void {
+			if (st > (m - x + n - y)) {
+				return;
+			}
+			
+			if (grid[x][y] == ')') {
+				if (st>0) {
+					--st;
+				}
+				else {
+					return;
+				}
+			}
+			else {
+				++st;
+			}
+			if (st==0 && (x == m - 1 && y == n - 1)) {
+				ans = 1;
+				return;
+			}
+			if (visited[x][y][st]) {
+				return;
+			}
+			visited[x][y][st] = 1;
+			for (auto& a : step) {
+				int new_x = x + a[0];
+				int new_y = y + a[1];
+				if (new_x >= 0 && new_x < m && new_y >= 0 && new_y < n && !visited[new_x][new_y][st]) {
+					dfs(grid,st, visited, new_x, new_y);
+				}
+			}
+			return;
+		};
+		dfs(grid, st, visited,0, 0);
+		return ans == 1;
+	}
+};
+
+
+
+// 448. 找到所有数组中消失的数字
+// [1,n]范围内的数在长度为n的数组中，各数字出现了一次，但是现在丢失了几个数字，找出丢失的数字。
+// 构造原数组本身充当哈希表。
+vector<int> findDisappearedNumbers(vector<int>& nums) {
+	int n = nums.size();
+	for (auto& a : nums) {
+		int index = (a - 1) % n; //即使加了n也能恢复到原数值
+		nums[index] += n;
+	}
+	vector<int> ans;
+	for (int i = 0; i < n; ++i) {
+		if (nums[i] <= n) {
+			ans.push_back(i + 1);
+		}
+	}
+	return ans;
+}
+
+
+// 442. 数组中重复的数据
+//给你一个长度为 n 的整数数组 nums ，其中 nums 的所有整数都在范围 [1, n] 内，且每个整数出现 一次 或 两次 。
+//请你找出所有出现 两次 的整数，并以数组形式返回。
+// 把原数组当作哈希表
+/**
+* note: 如果按照448那样子进行+n操作，因为数组中一个元素能出现多次，当输入为[2,2]
+* 即长度为2，且 最终的答案也是2，    若进行+n操作
+* 可以看到，第一次操作，index=（2-1）%n=1   数组变为[2,4]
+* 第二次操作，到位置4，发现大于n，那么存入（4%2）=0，错误
+* 
+* 对于输入[4,3,2,7,8,2,3,1]，n=8 前五次操作后，可得到 [12,11,10,15,8,2,11,1] 
+* 当 i=5时，nums[i]==2， 那么（2-1）%8=1, nums[1]==11>n   ，存入nums[i]%n=2    
+* i=6, nums[(3-1)%8] == 10>n 存入nums[i]%n=3  ... 这种是可以满足的
+* 当等于数组长度的数 第二次出现正好早最后一位，那么不行
+*/
+vector<int> findDuplicates(vector<int>& nums) {
+	int n = nums.size();
+	vector<int> ans;
+	for (int i = 0; i < n; ++i) {
+		int index = (abs(nums[i]) - 1);
+		if (nums[index] < 0) {  // 出现过，恢复原数值
+			ans.push_back(abs(nums[i]));
+		}
+		else {
+			nums[index] *= -1;
+		}
+	}
+	return ans;
+}
+
+
+
+// 449. 序列化和反序列化二叉搜索树
+// 可以利用二叉搜索树中序遍历是有序的性质
+class Code449 {
+public:
+	struct TreeNode {
+		int val;
+		TreeNode* left;
+		TreeNode* right;
+		TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+	};
+
+	// Encodes a tree to a single string.
+	// 前序遍历  和 中序遍历  能确定一颗二叉树   中序遍历和后序遍历能确定一颗二叉树
+	// 但是对于二叉搜索树，其前序遍历和后序遍历都能确定一颗唯一的二叉树
+	string serialize(TreeNode* root) {
+		vector<int> vec;
+		string res = "";
+		postOrder(root, vec);
+		if (vec.empty()) {
+			return res;
+		}
+		for (auto& a : vec) {
+			res.append(to_string(a) + ",");
+		}
+		res.pop_back();  // 去掉最后一个 ","
+		return res;
+	}
+
+	// 后序遍历  递归法
+	void postOrder(TreeNode* const root, vector<int>& vec) {
+		if (root == nullptr) {
+			return;
+		}
+		postOrder(root->left, vec);
+		postOrder(root->right, vec);
+		vec.emplace_back(root->val);
+	}
+
+	// 后序遍历  非递归
+	// 非递归使用栈的方式实现
+	void postOrder_iter(TreeNode* const root, vector<int>& vec) {
+		stack<TreeNode*> st;
+		TreeNode* temp = root;
+		int visited_node = 0;  //按value来记录最近访问过的结点,主要是判断是否要去右子树
+		while (temp != nullptr || !st.empty()) {
+			// 先走到最左边
+			if (temp != nullptr) {
+				st.push(temp);
+				temp = temp->left;
+			}
+			else {  // 已经走到最左边了
+				// 看是否最左边的结点还有右子树
+				temp = st.top();
+				if (temp->right != nullptr && temp->right->val != visited_node) {  //没访问过
+					// 到其右子树，再找右子树的最左结点
+					temp = temp->right;
+					st.push(temp);
+					temp = temp->left;
+				}
+				else { //访问过了
+					st.pop();  // 弹出当前节点
+					vec.push_back(temp->val);
+					visited_node = temp->val;
+					temp = nullptr;
+				}
+			}			
+		}
+	}
+
+
+	// Decodes your encoded data to tree.
+	TreeNode* deserialize(string data) { // 根据后序遍历还原
+		int lower = INT_MIN;
+		int upper = INT_MAX;
+		vector<int> vec;
+		// 解析一下 data
+		stringstream ss; 
+		ss << data;
+		string temp = "";
+		while (std::getline(ss, temp, ',')) {
+			vec.emplace_back(stoi(temp));
+		}
+		stack<int> st;
+		for (auto& a : vec) {
+			st.push(a);
+		}
+		return construct(lower, upper, st);
+	}
+
+	TreeNode* construct(int lower, int upper, stack<int>& st) {
+		if (st.empty() || st.top() < lower || st.top() > upper) {
+			return nullptr;
+		}
+		int val = st.top();
+		st.pop();
+		TreeNode* root = new TreeNode(val);
+		root->right = construct(val, upper, st);  // 右边的都大于val ，即val为lower bound
+		root->left = construct(lower, val, st);  //左边的都小于val ，即val为upper bound
+		return root;
+	}
+};
+
+
+
+// 297. 二叉树的序列化与反序列化
+class Codec {
+public:
+	struct TreeNode {
+		int val;
+		TreeNode* left;
+		TreeNode* right;
+		TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+	};
+
+	// Encodes a tree to a single string.
+	string serialize(TreeNode* root) {
+		string res = "";
+		TreeNode* p = root;
+		preOrder(p, res);
+		// 使用递归，把最后一个逗号删除
+		res.pop_back();
+
+		// 使用迭代，最后还少个"X"
+		// preOrder_case2(p, res);
+		// res += "X";
+
+		return res;
+	}
+
+	// 使用递归方式
+	void preOrder(TreeNode* root, string& str) {
+		if (root == nullptr) {
+			str += "X";
+			str += ",";
+			return;
+		}
+		str += to_string(root->val);
+		str += ",";
+		preOrder(root->left, str);
+		preOrder(root->right, str);
+	}
+
+	// 使用 非递归方式 进行前序遍历
+	void preOrder_case2(TreeNode* root, string& str) {
+		stack<TreeNode*> st;
+		st.push(root);
+		str = str + to_string(root->left->val) + ",";
+		TreeNode* temp = root;
+		int visited_node = 0;
+		while (temp!= nullptr || !st.empty()) {
+			if (temp!=nullptr) {  // 一直向左走
+				st.push(temp);
+				str += to_string(temp->val);   // 不断保存经过的结点
+				str += ",";
+				temp = temp->left;  // 走到最左
+			}
+			else { // 找右子树
+				str += "X";   // 不断保存经过的结点
+				str += ",";
+				temp = st.top();  // 回溯到父结点
+				st.pop();
+				temp = temp->right;
+				
+			}
+		}
+	}
+
+
+	// Decodes your encoded data to tree.
+	TreeNode* deserialize(string data) {  // 只给了一个string ，说明不能通过 前/中 + 后序  来确定唯一的二叉树
+		deque<string> que;
+		stringstream ss;
+		string temp;
+		ss << data;
+		while (getline(ss, temp, ',')) {
+			que.push_back(temp);
+		}
+		// 按照 ’,‘ 分割好了
+		return anls(que);
+
+	}
+
+	// 从左到右解析字符串
+	TreeNode* anls(deque<string>& que) {
+		// que 从前往后
+		if (!que.empty() && que.front() == "X") {  // 为空结点
+			que.pop_front();
+			return nullptr;
+		}
+		auto temp = new TreeNode(stoi(que.front()));
+		que.pop_front();
+		temp->left = anls(que);
+		temp->right = anls(que);
+		return temp;
+	}
+};
+
+// 中序遍历  非递归实现
+
+
+
+// 712. 两个字符串的最小ASCII删除和
+// 给定两个字符串s1 和 s2，返回 使两个字符串相等所需删除字符的 ASCII 值的最小和 。
+// 转身去求  最大ASCII码的公共字符串，这样的话删除量就最小
+// 1143. 最长公共子序列
+int minimumDeleteSum(string s1, string s2) {
+	int m = s1.size();
+	int n = s2.size();
+	vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
+	for (int i = 1; i <= m; ++i) {    // 求最长公共子序列
+		for (int j = 1; j <= n; ++j) {
+			if (s1[i - 1] == s2[j - 1]) {
+				dp[i][j] = dp[i - 1][j - 1] + s2[j - 1];
+			}
+			else {
+				dp[i][j] = max(dp[i][j - 1], dp[i - 1][j]); 
+			}
+		}
+	}
+	int asc1 = 0, asc2 = 0;
+	for (auto& a : s1) {
+		asc1 += a;
+	}
+	for (auto& a : s2) {
+		asc2 += a;
+	}
+	return asc1 + asc2 - 2 * dp[m][n];
+}
+
+
+
+// 236. 二叉树的最近公共祖先
+class Solution236 {
+public:
+	struct TreeNode {
+		int val;
+		TreeNode* left;
+		TreeNode* right;
+		TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+	};
+	TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) { //  递归方式求解
+		if (root == nullptr) {
+			return nullptr;
+		}
+		if (root == p || root == q) {
+			return root;  // 找到目标值后，返回当前父结点
+		}
+		TreeNode* left = lowestCommonAncestor(root->left, p, q);
+		TreeNode* right = lowestCommonAncestor(root->right, p, q); // 从left得到的父结点继续往下找
+		
+		// 如果分别在以root为根节点的左右子树上
+		if (left != nullptr && right != nullptr) {
+			return root;
+		}
+		else if (left != nullptr) { // 左不空，右空，说明p q均在以root为根的左子树
+			return left;
+		}
+		else { // 左空，右不空，说明p q均在以root为根的右子树
+			return right;
+		}
+	}
+
+	// 保存到两个节点的路径，找两条路径上的最后一个公共结点
+	// 测试用例过大会超时
+	TreeNode* lowestCommonAncestor_find_con(TreeNode* root, TreeNode* p, TreeNode* q) {
+		vector<TreeNode*> ans1;
+		vector<TreeNode*> ans2;
+		vector<TreeNode*> temp1, temp2;
+		dfs(root, temp1, ans1, p->val);
+		dfs(root, temp2, ans2, q->val);
+		int n = (ans1.size() <= ans2.size()) ? ans1.size() : ans2.size();
+		TreeNode* ans = nullptr;
+		for (int i = 0; i < n; ++i) {
+			if (ans1[i] == ans2[i]) {
+				ans = ans1[i];
+			}
+		}
+		return ans;
+	}
+	void dfs(TreeNode* root, vector<TreeNode*> vec, vector<TreeNode*>& ans, int target) {
+		// 边界
+		if (root == nullptr) {
+			return;
+		}
+		vec.push_back(root);
+		if (root->val == target) {
+			ans = vec;
+			return;
+		}
+		dfs(root->left, vec, ans, target);
+		dfs(root->right, vec, ans, target);
+	}
+};
+
+
+// ==================================================================  下一个系列  ================================================
+// 
+//面试题 05.04. 下一个数
+// 给定一个正整数，找出与其二进制表达式中1的个数相同且大小最接近的那两个数（一个略大，一个略小）。
+class Next0504 {
+public:
+	vector<int> findClosedNumbers(int num) {
+		if (num == 1) {
+			return { 2,-1 };
+		}
+		if (num == 2147483647) {
+			return { -1,-1 };
+		}
+		// 预先将num转为0-1数组
+		// 找大的数， 遇到01  就转换为10， 并把右侧所有的1移到低位   ... 01 ...  =>  ... 10 ...
+		// 找小的数， 遇到10， 就转换为01， 并把右侧所有的1移到高位
+		vector<int> str;
+		for (int i = 0; i < 32; ++i) {
+			str.push_back(num & 1);
+			num >>= 1;
+		}
+
+		vector<int> gnum = str;
+		int maxtag = -1;
+		for (int i = 0; i < str.size() - 1; ++i) {  //找 01  从高位向低位
+			if (str[i] == 1  && str[i + 1] == 0) {  // 存储顺序是反的
+				maxtag = 1;
+				swap(gnum[i], gnum[i + 1]);
+				int left = i - 1, right = 0;
+				while (left > right) {
+					while (left > right && gnum[left] == 1 && gnum[right] == 0) {
+						swap(gnum[left], gnum[right]);
+						left--;
+						right++;
+					}
+					while (left > right && gnum[left] != 1) {
+						--left;
+					}
+					while (left > right && gnum[right]!=0) {
+						++right;
+					}
+				}
+				break;
+			}
+		}
+		
+		// 找小 
+		int mintag = -1;
+		for (int i = 0; i < str.size() - 1; ++i) {
+			if (str[i] == 0 && str[i + 1] == 1) {
+				mintag = 1;
+				swap(str[i], str[i + 1]);
+				int left = i - 1, right = 0;
+				while (left > right) {
+					while (left > right && str[left] == 0 && str[right] == 1) {
+						swap(str[left], str[right]);
+						left--;
+						right++;
+					}
+					while (left > right && str[left] != 0) {
+						left--;
+					}
+					while (left > right && str[right] != 1) {
+						right++;
+					}
+				}
+				break;
+			}
+		}
+		int ans1 = 0, ans2 = 0;
+		int tag1 = -1;
+		for (int i = gnum.size() -1; i >= 0; --i) {
+			if (gnum[i] == 1) {
+				tag1 = i;
+			}
+			if (tag1 != -1) {
+				ans1 <<= 1;
+				ans1 |= gnum[i];
+				
+			}
+		}
+		tag1 = -1;
+		for (int i = str.size() - 1; i >= 0; --i) {
+			if (str[i] == 1) {
+				tag1 = i;
+			}
+			if (tag1 != -1) {
+				ans2 <<= 1;
+				ans2 |= str[i];
+				
+			}
+		}
+		if (mintag == -1) {
+			ans2 = -1;
+		}
+		if (maxtag == -1) {
+			ans1 = -1;
+		}
+		return { ans1,ans2 };
+	}
+};
+
+// 496. 下一个更大元素 I
+// nums1 中数字 x 的 下一个更大元素 是指 x 在 nums2 中对应位置 右侧 的 第一个 比 x 大的元素
+class Next496 {
+public:
+	vector<int> nextGreaterElement(vector<int>& nums1, vector<int>& nums2) {
+		// 建个hash吧，不然查询很花时间
+		// 常见的下一个更大的数，常用单调栈
+		unordered_map<int, int> mp;
+		int n = nums2.size();  // 记录一下最大值
+		stack<int> st;  // 单调栈保存右侧所有的数字
+		st.push(nums2[n - 1]);
+		mp[nums2[n - 1]] = -1;
+
+		for (int i = nums2.size() - 2; i >= 0; --i) {
+			// 找右侧比当前值大的
+			while (!st.empty() && nums2[i] > st.top()) {  // 更新单调栈
+				st.pop();
+			}
+			// 找到了， 或者没找到栈空了
+			if (!st.empty()) {  // 找到了
+				mp[nums2[i]] = st.top();
+			}
+			else {
+				mp[nums2[i]] = -1;
+			}
+			st.push(nums2[i]);
+		}
+		vector<int> ans;
+		for (int i = 0; i < nums1.size(); ++i) {
+			ans.push_back(mp[nums1[i]]);
+		}
+		return ans;
+	}
+};
+
+// 503. 下一个更大元素 II
+class Next503 {
+public:
+	// 或者吧nums拼接做，最后结果取一半，也可以
+	vector<int> nextGreaterElements(vector<int>& nums) {
+		int n = nums.size();
+		vector<int> vec(n, -1);
+		stack<int> st;
+		for (int i = 0; i <= 2 * nums.size() - 1; ++i) {
+			while (!st.empty() && nums[i % n] > nums[st.top()]) {
+				vec[st.top()] = nums[i % n];
+				st.pop();
+			}
+			st.push(i % n);
+		}
+		return vec;
+	}
+};
+
+// 556. 下一个更大元素 III
+// 给你一个正整数 n ，请你找出符合条件的最小整数，
+// 其由重新排列 n 中存在的每位数字组成，并且其值大于 n 。如果不存在这样的正整数，则返回 -1 。
+/*
+	这题，也就是从同一数组中取完所有数字，来获得下一个更大的数字d
+	把 n 拆分成一个个数字，然后就变成 leetcode31. 下一个排列了！
+*/
+// 从后往前，找到第一个升序排列的   如  12385764， 第一个升序排列是 5 7， 下标记为i 和 j， 
+// 然后从[j, end], 从end开始，找到第一个大于 i位置的数 
+
+/*
+class Next556 {
+public:
+	vector<int> nextGreaterElements(vector<int>& nums) {
+		
+	}
+};
+
+// 31. 下一个排列
+class Next31 {
+public:
+
+};*/
+
+
+
+// 691. 贴纸拼词
+/*
+ dfs 搜索stickers是否适用并返回最少数量，注意剪枝和记忆化搜索
+*/
+class Solution691 {
+public:
+	unordered_map<string, int> mp;
+	int minStickers(vector<string>& stickers, string target) {
+		// 统计每个sticker中字母出现的数量
+		int n = stickers.size();
+		vector<vector<int>> vec(n, vector<int>(26, 0));
+		for (int i = 0; i < n; ++i) {
+			for (auto& a : stickers[i]) {
+				vec[i][a - 'a']++;
+			}
+		}
+		mp[""] = 0;
+		return dfs(vec, target);
+	}
+
+	// 剪枝，考虑target剩下字符
+	int dfs(vector<vector<int>>& vec, string target) {
+		if (mp.count(target)) {
+			return mp[target]; // 返回这个target的子集（包括本身）所需要的最少ticks
+		}
+		int ans = INT_MAX;
+		// 记录一下当前target还剩哪些字符
+		vector<int> rec(26, 0);
+		for (auto& a : target) {
+			rec[a - 'a']++;
+		}
+
+		// 来找stickers， 看哪些可以满足, stickers是可以重复使用的
+		for (int i = 0; i < vec.size(); ++i) {
+			// 验证
+			if (vec[i][target[0] - 'a'] == 0) {   // 为什么剪枝要这么做
+				continue;
+			}
+			/*		
+			*/
+
+			string left_target = "";  // 记录使用了这个sticker后，还剩多少字母
+			for (int k = 0; k < 26; ++k) {
+				if (rec[k] - vec[i][k] > 0) {
+					// 当前sticker的字母不会超过target目前所拥有的
+					left_target += string(rec[k] - vec[i][k], 'a' + k);  // constructor:   string (size_t n, char c);
+				}
+			}
+
+			// 遍历完所有stickers一遍之后，剩下的target
+			int use_count = dfs(vec, left_target); 
+			if (use_count != -1) {
+				ans = min(ans, use_count + 1); //加上当前这张
+			}
+		}
+		mp[target] = (ans == INT_MAX ? -1 : ans);
+		return mp[target];
+	}
+};
+
+
+// 6065. 按位与结果大于零的最长组合
+/*
+ 	1 <= candidates.length <= 10^5
+	1 <= candidates[i] <= 10^7
+	我一开始做了dfs， 超时。
+*/
+/*
+* 位操作，  还是太菜
+	要求 多个数按位与 大于0
+	那么 这几个数按位与操作后，二进制一定不全为0，也就是说肯定至少有一位他们全是1
+	我只要找到，所有的数字中，二进制中哪一位的1最多，也就意味着这些数 进行 与操作不会得到0
+*/
+class Solution123121233 {
+public:
+	int largestCombination(vector<int>& candidates) {
+		int ans = 0;
+		for (int i = 0; i <= 30; ++i) {  // 枚举每一位
+			int count = 0;
+			for (auto& a : candidates) {
+				if ((a >> i) & 1) {
+					count++;
+				}
+			}
+			ans = max(ans, count);
+		}
+		return ans;
+	}
+};
+
+// 剑指 Offer II 074. 合并区间
+// 56. 合并区间
+// 区间并集问题  区间合并
+class Solution56 {
+public:
+	vector<vector<int>> merge(vector<vector<int>>& intervals) {
+		sort(intervals.begin(), intervals.end());
+		vector<vector<int>> ans;
+		for (int i = 0; i < intervals.size(); ++i) {
+			int l = intervals[i][0], r = intervals[i][1];
+			if (!ans.empty() && l <= ans.back()[1]) {  // 当前区间的左边小于上个点的右边，满足合并 
+				ans.back()[1] = max(ans.back()[1], r);
+			}
+			else {  // 不满足合并
+				ans.push_back(intervals[i]);
+			}
+		}
+		return ans;
+	}
+};
+
+
+
+// 6066. 统计区间中的整数数目
+/*
+	区间并集问题
+	给个set， 每次add之后，将相交的区间合并
+		// 和普通区间合并问题的区别是，这个是边加边合并
+		// 普通合并问题是 提前给完集合，进行合并
+*/
+class CountIntervals {
+public:
+	using PII = pair<int, int>;
+	vector<PII> vec;
+	set<PII> st;
+	int ans = 0;
+	CountIntervals() {
+		
+	}
+
+	void add(int left, int right) {
+		// 准备合并区间
+		// 先找left落到其他区间右侧   [       ]   [       ]
+		//                              L[       R]   这种形式, 要小心右侧还能合并，三合一
+		//    l[     r]              l[        r]
+		//        L[     R]     L[       R] 
+		// 查找时，找到 第一个区间的右节点r大于L的区间  上两行，两种情况都能这么找
+		/*
+			存储pair的时候，反着存， 以{r,l}存入到set中
+			{c, d} = lower_bound({a, b})是要(c > a)||(c == a && d >= b)
+			那么  auto it = st.lower_bound({L, -1e9})  就是 找到 (r>L) || (r == L && l >= -1e9)
+		*/
+		// 先找插入点位
+		int L = left;
+		int R = right;
+		auto it = st.lower_bound({ left - 1, -1e9 });  // 找到大于等于left的区间右侧, 即 r > L, 二者相邻也满足合并要求， 即r == L - 1 
+		// l,r记为set中的区间边界， LR为插入区间的边界
+		while (it != st.end()) {
+			//插入点在当前区间内部，及 it->first <= left < right <= it->right
+			// it->first  本身 就已经小于left
+			if (it->second > right + 1) {  // l要大于R, 考虑二者相邻也能合并，即 R+1==l
+				break;   //不相交， r > L  且 l > R
+			}
+			// 可以合并
+			L = min(it->second, L);  // 可能连续更新，记录合并区间的边界
+			R = max(it->first, R);
+
+			ans -= (it->first - it->second + 1);  //把将要删除掉的区间，减掉里面的整数点
+			st.erase(it++);  //it++ 是先记下 it 的值，然后 ++，所以等调用 erase 的时候 it 值已经变了，但是 erase 收到的还是原来的值。
+			// it++返回右值，++it返回左值
+		}
+		ans += (R - L + 1);// 记录新的点数
+		st.insert({ R, L });
+	}
+
+	int count() {
+		return ans;
+	}
+};
+
+
+/*
+	对于第K小/大的数， 简单、中等题就使用优先队列，难题就是二分法
+*/
+// 668. 乘法表中第k小的数
+class Solution668 {
+public:
+	/*
+		每一列递增，统计每一列大于num的个数
+	*/
+	int count_col(int m, int n, int num) {
+		int i = m, j = 1;
+		int sum = 0;
+		while (i >= 1 && j <= n) {
+			if (i * j <= num) {
+				sum += i;
+				++j;
+			}
+			else {
+				--i;
+			}
+		}
+		return sum;
+	}
+
+	int findKthNumber(int m, int n, int k) {
+		// 二分查找
+		int left = 1, right = m * n;
+		while (left < right) {  // 统计在num中的大于mid的个数
+			int mid = left + (right - left) / 2;  // 如何保证mid在表中
+			int count = count_col(m, n, mid);
+			if (count < k) {
+				left = mid + 1;
+			}
+			else {
+				right = mid;
+			}
+		}
+		return left;
+	}
+};
+
+
+// 462. 最少移动次数使数组元素相等 II
+class Solution462 {
+public:
+	int minMoves2_case1(vector<int>& nums) {  // 排序后取中位数，求和
+		int n = nums.size();
+		if (n == 1) {
+			return 0;
+		}
+		sort(nums.begin(), nums.end());
+		int mid = n / 2;
+		int ans = 0;
+		for (int i = 0; i < n; ++i) {
+			ans += abs(nums[i] - nums[mid]);
+		}
+		return ans;
+	}
+
+	// 快速选择算法， 找mid
+	int minMoves2_case2(vector<int>& nums) {
+		int n = nums.size();
+		int mid = quickSort(nums, 0, n - 1, n / 2);
+		int ans = 0;
+		for (int i = 0; i < n; ++i) {
+			ans += abs(nums[i] - mid);
+		}
+	}
+
+	int quickSort(vector<int>& nums, int left, int right, int mid) {
+		int index = random_index(left, right);
+		swap(nums[index], nums[right]);
+		int rtn = partion(nums, left, right);
+		if (rtn == mid) {
+			return nums[rtn];
+		}
+		else if (rtn < mid) {  // 当前数在中位数左边， 开始从当前数的右边找，因为左边都是小于该数的
+			return quickSort(nums, rtn + 1, right, mid);
+		}
+		else {
+			return quickSort(nums, left, rtn - 1, mid);
+		}
+	}
+
+	int random_index(int left, int right) {
+		return rand() % (right - left + 1) + left;
+	}
+
+	int partion(vector<int>& nums, int left, int right) {
+		int i = left - 1;
+		for (int j = left; j <= right; ++j) {
+			if (nums[j] < nums[right]) {
+				swap(nums[++i], nums[j]);  // 小于pivot的都挪到左边去
+			}
+		}
+		swap(nums[i+1], nums[right]);// pivot 归位
+		return i+1;
+	}
+};
+
+// 436. 寻找右区间
+class Solution436 {
+public:
+	vector<int> findRightInterval(vector<vector<int>>& intervals) {
+		// 要查找的是左侧大于另一个区间右侧的点
+		// 二分查找左点，给个vector<pair<int, int>> 存储左端点和原先下标
+		int n = intervals.size();
+		vector<pair<int, int>> vec;
+		for (int i = 0; i < n; ++i) {
+			vec.emplace_back(make_pair(intervals[i][0], i));
+		}
+		sort(vec.begin(), vec.end());  // 左端点从小到大
+		// 针对 每一个点的右端点  查找最小左端点
+		vector<int> ans;
+		for (int i = 0; i < n; ++i) {
+			auto fd = lower_bound(vec.begin(), vec.end(), make_pair(intervals[i][1], 0));
+			if (fd != vec.end()) {
+				ans.emplace_back(fd->second);
+			}
+			else {
+				ans.push_back(-1);
+			}
+		}
+		return ans;
+	}
+};
+
+// 6077. 巫师的总力量和
+// 保存滑动窗口的最小值是比较困难的
+// 这题思想和  1856. 子数组最小乘积的最大值  很像
+// 单调栈 + 前缀和
+// 巧用前缀和的前缀和
+class Solution6077 {
+public:
+	int MOD = 1e9 + 7;
+	int totalStrength(vector<int>& strength) {
+		// 先找出每个元素x   左侧<=x的最近点(第一个点)，没有则默认-1  右侧 <=x 的最近点，没有则默认n
+		// 单调栈实现找最小值的下标
+		int n = strength.size();
+		vector<int> left(n, -1), right(n, n);
+		stack<int> st;
+		for (int i = 0; i < n; ++i) {
+			while (!st.empty() && strength[st.top()] >= strength[i]) st.pop();
+			if (!st.empty()) left[i] = st.top();
+			st.push(i);
+		}
+
+		while (!st.empty()) st.pop();
+		for (int i = n - 1; i >= 0; --i) {
+			while (!st.empty() && strength[st.top()] > strength[i]) st.pop();
+			if (!st.empty()) right[i] = st.top();
+			st.push(i);
+		}
+
+		// 求前缀和
+		vector<int> psum(n + 1);
+		for (int i = 1; i <= n; ++i) {
+			psum[i] = (psum[i - 1] + strength[i - 1]) % MOD;
+		}
+		// 求前缀和的前缀和
+		vector<long long> ppsum(n + 2);
+		for (int i = 2; i <= n + 1; ++i) {
+			ppsum[i] = (ppsum[i - 1] + psum[i - 1]) % MOD;
+		}
+
+		// 针对每个min值，计算其作用区间
+		// 每个min值管辖范围为 [left[min] + 1, right[min] - 1]
+		long long ans = 0;
+		for (int i = 0; i < n; ++i) {
+			long l = left[i] + 1, r = right[i] - 1;
+			long long lsum = ((ppsum[i + 1] - ppsum[l]) * (r - i + 1));
+			long long rsum = ((ppsum[r + 2] - ppsum[i + 1]) * (i - l + 1));
+			long long ttt = (rsum - lsum) % MOD;
+			ans = (ans + strength[i] * ttt) % MOD;
+		}
+		return (int)((ans + MOD) % MOD);
+	}
+};
+
+
+
+// 464. 我能赢吗
+// dfs + 记忆化搜索
+class Solution464 {
+public:
+	unordered_map<int, bool> mem;
+	bool canIWin(int maxChoosableInteger, int desiredTotal) {
+		// 和石子游戏I有点像，但是这题没有按照顺序
+		// 石子游戏I 只能取两端的数字
+		if ((maxChoosableInteger * (maxChoosableInteger + 1)) / 2 < desiredTotal) {
+			return false;
+			// n(n+1)/2
+		}
+		return dfs(maxChoosableInteger, 0, desiredTotal, 0);
+	}
+	bool dfs(int maxChoosableInteger, int visited, int desiredTotal, int nowTotal) {
+		// visited以二进制的方式存储被使用过的数字
+		if (!mem.count(visited)) {
+			// 开始选数字
+			bool ret = false;
+			for (int i = 0; i < maxChoosableInteger; ++i) {
+				if (((visited >> i) & 1) == 0) {   // 这位没选过
+				// 我选了这位能直接获胜
+					if (i + nowTotal + 1 >= desiredTotal) {
+						ret = true;
+						break;
+					}
+					// 如果我选了这位不能直接获胜
+					// 那么如果之后另一个人输了，也表示我能赢
+					if (!dfs(maxChoosableInteger, visited | (1 << i), desiredTotal, nowTotal + i + 1)) {
+						ret = true;
+						break;
+					}
+				}
+			}
+			mem[visited] = ret;
+		}
+		return mem[visited];
+	}
+};
+
+// 675. 为高尔夫比赛砍树
+class Solution675 {
+public:
+	using PII = pair<int, int>;
+	vector<vector<int>> steps{ {0,-1},{0,1},{-1,0},{1,0} };
+	int cutOffTree(vector<vector<int>>& forest) {
+		// 题目要求按照所有树从高到低的顺序砍完
+		// 对所有树进行排序，并且保存下标
+		vector<PII> vec;
+		for (int i = 0; i < forest.size(); ++i) {
+			for (int j = 0; j < forest[i].size(); ++j) {
+				if (forest[i][j] > 1) {
+					vec.emplace_back(i, j);
+				}
+			}
+		}
+		sort(vec.begin(), vec.end(), [&](const auto& a, const auto& b) {
+			return forest[a.first][a.second] < forest[b.first][b.second];
+			});
+		int x = 0;
+		int y = 0;
+		int ans = 0;
+		for (int i = 0; i < vec.size(); ++i) {  // 找到每个位置的路径
+			int temp = bfs(x, y, vec[i].first, vec[i].second, forest);
+			if (temp == -1) {
+				return -1;
+			}
+			else {
+				ans += temp;
+				x = vec[i].first;
+				y = vec[i].second;
+			}
+		}
+		return ans;
+	}
+
+	// bfs能保证从矩阵中走过去是最短路径
+	int bfs(int x, int y, int target_x, int target_y, vector<vector<int>>& forest) {
+		int p = forest.size();
+		int q = forest[0].size();
+		if (x == target_x && y == target_y) {
+			return 0;
+		}
+		queue<PII> que;
+		vector<vector<int>> visited(p, vector<int>(q, 0));
+		que.push({ x,y });
+		visited[x][y] = 1;
+		int step = 0;
+		while (!que.empty()) {
+			int n = que.size();
+			step++;
+			for (int i = 0; i < n; ++i) {
+				auto temp = que.front();
+				que.pop();
+				for (int j = 0; j < 4; ++j) {
+					int new_x = temp.first + steps[j][0];
+					int new_y = temp.second + steps[j][1];
+					if (new_x >= 0 && new_x < p && new_y >= 0 && new_y < q) {
+						if (!visited[new_x][new_y] && forest[new_x][new_y] > 0) {
+							if (new_x == target_x && new_y == target_y) {
+								return step;
+							}
+							visited[new_x][new_y] = 1;
+							que.push({ new_x, new_y });
+						}
+					}
+				}
+			}
+		}
+		return -1;
+	}
+
+};
+
+
+//467. 环绕字符串中唯一的子字符串
+int case467(string p) {
+	vector<int> dp(26, 0);
+	int n = p.size();
+	int temp = 1;
+	for (int i = 1; i < n; ++i) {
+		if ((p[i] == 'a' && p[i - 1] == 'z') || (p[i] - 'a') == (p[i - 1] - 'a' + 26 + 1) % 26) {
+			// 连续
+			temp++;
+		}
+		else { // 不连续
+			temp = 1;
+		}
+		dp[p[i] - 'a'] = max(dp[p[i] - 'a'], temp);
+	}
+	return accumulate(dp.begin(), dp.end(), 0);
+}
+
+
+
+// 795. 区间子数组个数
+int numSubarrayBoundedMax(vector<int>& nums, int left, int right) {
+	std::function<int(vector<int>&, int)> atMostK = [&](vector<int>& nums, int k)->int {
+		int ans = 0;
+		int temp = 0;
+		int n = nums.size();
+		for (int i = 0; i < n; ++i) {
+			if (nums[i] <= k) {
+				temp++;
+			}
+			else {
+				temp = 0;
+			}
+			ans += temp;
+		}
+		return ans;
+	};
+	return atMostK(nums, right) - atMostK(nums, left - 1);
+}
+
+
+// 904. 水果成篮
+int totalFruit(vector<int>& fruits) {
+	int n = fruits.size();
+	unordered_map<int, int> mp;
+	int j = 0; // 记录前一种水果的起始下标
+	int k = 2;
+	int ans = 0;
+	for (int i = 0; i < n; ++i) {
+		if (mp[fruits[i]] == 0) { // 没使用过
+			--k;
+		}
+		mp[fruits[i]]++;
+		while (k < 0) {  // 有新水果进来，篮子已超出了两个
+			// 删除前一种水果
+			mp[fruits[j]]--;
+			if (mp[fruits[j]] == 0) {
+				++k;
+			}
+			j++;  // 删除多少个就往后移动多少位，因为是连续的，所以间接等同于移到前一种水果的最后一个位置
+		}
+		ans = max(ans, i - j + 1);
+	}
+	return ans;
+}
+
+
+// 992. K 个不同整数的子数组
+int subarraysWithKDistinct992(vector<int>& nums, int k) {
+	auto mostEqualK = [&](vector<int>& nums, int k)->int {
+		unordered_map<int, int> mp;
+		int j = 0; // 保存最早出现的数字
+		int n = nums.size();
+		int ans = 0;
+		for (int i = 0; i < n; ++i) {
+			if (mp[nums[i]] == 0) {  // 没出现过，加进去
+				--k; // 剩余的不同数目减一
+			}
+			mp[nums[i]]++;
+			// 没出现过的数字加进去后发现超出了不同数字的要求值
+			while (k < 0) {
+				mp[nums[j]]--;
+				if (mp[nums[j]] == 0) {  // 直至清空前面任何一个数字
+					// 因为删除空的数字之前的那部分也是不能使用的，因为不连续
+					++k; // k从-1归0， 此时正好用完
+				}
+				++j;
+			}
+			ans += (i - j + 1);  // 按照之前求countArray的方法
+		}
+		return ans;
+	};
+	return mostEqualK(nums, k) - mostEqualK(nums, k - 1);
+}
+
+
+// 1109. 航班预订统计
+// 差分数组
+vector<int> corpFlightBookings(vector<vector<int>>& bookings, int n) {
+	// 差分数组
+	vector<int> nums(n + 1, 0);
+	for (int i = 0; i < i < bookings.size(); ++i) {
+		nums[bookings[i][0] - 1] += bookings[i][2];
+		nums[bookings[i][1]] -= bookings[i][2];
+	}
+	for (int i = 1; i < n; ++i) {
+		nums[i] += nums[i - 1];
+	}
+	nums.pop_back();
+	return nums;
+}
+
+
+// 6079. 价格减免
+class Solution6079 {
+public:
+	string discountPrices(string sentence, int discount) {
+		// stringstream 拆分字符串
+		stringstream ss;
+		string temp;
+		vector<string> str;
+		ss << sentence;
+		
+
+		auto judge = [&](const string& s) -> bool{
+			if (s[0] != '$') {
+				return false;
+			}
+			else {
+				if (s.size() == 1) {
+					return false;
+				}
+				int n = s.size();
+				for (int i = 1; i < n; ++i) {
+					if (s[i] < '0' || s[i] > '9') {
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		};
+
+		string ans = "";
+		bool begin = 1;
+		while (ss>>temp) {
+			if (!begin) {
+				ans += " ";
+			}
+			begin = 0;
+			if (judge(temp)) {  // 当前是价格
+				long num = 0;
+				for (int j = 1; j < temp.size(); ++j) {
+					num = num * 10 + (temp[j] - '0');
+				}
+
+				int d = 100 - discount;
+				num = num * d;
+				ans += '$' + to_string(num / 100) + '.';
+				// ans = ans + '$' + to_string(num / 100) + '.';
+				// 没写+=   直接超时超到死
+				num %= 100;  // 取后两位
+				if (num == 0) {
+					ans += "00";
+				}
+				else {
+					ans += to_string(num / 10) + to_string(num % 10);
+				}
+			}
+			else {
+				ans += temp;
+			}
+		}
+		return ans;
+	}
+};
+
+
+// 468. 验证IP地址
+// 正则化 regex
+string validIPAddress(string queryIP) {
+	regex ipv4("((25[0-5]|2[0-4][0-9]?|1[0-9]?[0-9]?|0).){3}(25[0-5]|2[0-4][0-9]?|1[0-9]?[0-9]?|0)");
+	regex ipv6("(([0-9a-fA-F]{1,4}):){7}([0-9a-fA-F]{1,4})");
+	smatch mt;
+	bool ret4 = regex_match(queryIP, mt, ipv4);
+	bool ret6 = regex_match(queryIP, mt, ipv6);
+	return ret4 == true ? "IPv4" : ret6 == true ? "IPv6" : "Neither";
+}
+
+
+// 剑指 Offer II 114. 外星文字典
+// 经典拓扑排序  +  经典dfs
+// 好题
+class Solution114 {
+public:
+	unordered_map<char, vector<char>> edges;  // 邻接表存储有向边
+	unordered_map<char, int> visited;  // 记录点的访问情况
+	bool valid = true;
+	int index;
+	string ans;
+	
+	string alienOrder(vector<string>& words) {
+		// 初始化结点
+		for (auto& word : words) {
+			int n = word.size();
+			for (int i = 0; i < n; ++i) {
+				if (!edges.count(word[i])) {
+					edges[word[i]] = vector<char>();
+				}
+			}
+		}
+		// 加入边
+		for (int i = 1; i < words.size(); ++i) {
+			addEdge(words[i - 1], words[i]);
+		}
+
+		this->ans = string(edges.size(), ' ');
+		this->index = edges.size() - 1;
+
+		for (auto& [node, _] : edges) {  // 遍历结点
+			if (!visited.count(node)) {  // 没访问过
+				dfs(node);
+				if (!valid) {
+					return "";
+				}
+			}
+		}
+		return ans;
+	}
+
+	void addEdge(string pre, string last) {
+		int n = min(pre.size(), last.size());
+		int index = 0;
+		while (index < n) {
+			if (pre[index] != last[index]) {
+				edges[pre[index]].emplace_back(last[index]);
+				break;
+			}
+			++index;
+		}
+		if (index == n && pre.size() > last.size()) {
+			valid = false;
+		}
+	}
+	
+	// dfs 总能找到字典序最大的那个字母
+	void dfs(char bg) {
+		visited[bg] = 2;  //2 代表正在访问
+		for (char temp : edges[bg]) {
+			if (!visited.count(temp)) {  // 没访问过
+				dfs(temp);
+				if (!valid) {
+					return;
+				}
+			}
+			else if(visited[temp] == 2) {  // 形成了环
+				valid = false;
+				return;
+			}
+		}
+		// 标记当前节点访问过了
+		// 走到这里，说明后面已经没边了
+		visited[bg] = 1;
+		ans[index] = bg;  //
+		--index;  // 下标减1
+	}
+};
+
+
+// 473. 火柴拼正方形
+// dfs 
+class Solution473 {
+public:
+	bool makesquare(vector<int>& matchsticks) {
+		int sum = accumulate(matchsticks.begin(), matchsticks.end(), 0);
+		if (sum % 4) {
+			return false;
+		}
+		int edge = sum / 4;
+		vector<int> edges(4, edge);  //  存储还缺多少
+		sort(matchsticks.begin(), matchsticks.end(), greater<int>());
+
+		std::function<bool(vector<int>&, vector<int>&, int index, int target)> dfs = [&](vector<int>& matchsticks, vector<int>& edges, int index, int target)->bool {
+			if (index == matchsticks.size()) {
+				return true;
+			}
+			for (int i = 0; i < edges.size(); ++i) {
+				edges[i] -= matchsticks[index];  // 选当前的
+				if (edges[i] >= 0) {  // 可以选
+					bool temp = dfs(matchsticks, edges, index + 1, edge);
+					if (temp) {
+						return true;
+					}
+				}
+				edges[i] += matchsticks[index];  // 不能选，还原
+			}
+			return false;
+		};
+
+		return dfs(matchsticks, edges, 0, edge);
+	}
+};
+
+// 698. 划分为k个相等的子集
+// 经典dfs
+class Solution698 {
+public:
+	bool dfs(vector<int>& nums, vector<int>& sub, int index, int target) {
+		if (index == nums.size()) {
+			return true;
+		}
+		// 考虑每个数组的选取情况
+		for (int i = 0; i < sub.size(); ++i) {
+			sub[i] += nums[index];
+			if (sub[i] <= target) { // 说明当前这个数字可以选
+				bool temp = dfs(nums, sub, index + 1, target); // 开始遍历后续数字
+				// 因为若本次能成功，dfs会一直走到底，这样temp为真说明情况可以
+				if (temp) {
+					return true;
+				}
+			}
+			// 说明这个数字选不了,则减去
+			sub[i] -= nums[index];
+			if (sub[i] == 0) {   // 剪枝剪的好  ！！！！！！！！！！
+			// 如果连一个数都装不下，那么说明这个数组不满足
+				return false;
+			}
+		}
+		return false;
+	}
+
+	bool canPartitionKSubsets(vector<int>& nums, int k) {
+		// 经典题目
+		int sum = accumulate(nums.begin(), nums.end(), 0);
+		if (sum % k) {
+			return false;
+		}
+		int each = sum / k;
+		int index = 0;
+		vector<int> sub(k, 0); // 保存每个数组当前的值
+		// 从大开始选
+		sort(nums.begin(), nums.end(), greater<int>());
+		return dfs(nums, sub, index, each);
+	}
+};
+
+
+// 实现堆的建立、插入和删除
+class HeapBID {
+public:
+	// 数组下标从0开始
+	void shiftDown(vector<int>& nums, int k) {  // 向下调整
+		int leftChild = k * 2 + 1, rightChild = k * 2 + 2;
+		int maxIndex = k; //假设在当前节点，及其左、右子节点，共三个节点中，最大的是当前这个节点。后序我们就要更新max，看到底哪个才是最大的，把最大的那个和当前节点交换
+		if (leftChild < nums.size() && nums[leftChild] > nums[maxIndex])
+			maxIndex = leftChild;
+		if (rightChild < nums.size() && nums[rightChild] > nums[maxIndex])
+			maxIndex = rightChild;
+		if (maxIndex != k)
+		{
+			swap(nums[maxIndex], nums[k]);
+			shiftDown(nums, maxIndex); // 如果原k节点调整了位置(上一步swap调整)，那么就要将k继续做shiftDown操作，直到它比它的左、右孩子都大
+		}
+		
+	}
+	//  建立的是大顶堆
+	// 向上调整，删除堆顶时候使用
+	void shiftUp(vector<int>& nums) {  // 向上调整
+		// 首先将最后一个孩子节点插入到头节点
+		int child = nums.size() - 1;
+		int parent = (child - 1) / 2;
+		while (child > 0) {
+			if (nums[parent] < nums[child]) {
+				swap(nums[parent], nums[child]);
+			}
+			else {
+				break;
+			}
+			child = parent;
+			parent = (child - 1) / 2;  // 换层
+		}
+	}
+
+	void buildMaxHeap(vector<int>& nums) {
+		int n = nums.size();
+		for (int i = 0; i < n/2; ++i) {  // 从第一个非叶子节点开始，从下往上，将每棵子树调整成最大堆
+			shiftDown(nums, i);
+		}
+	}
+
+	void inHeap(vector<int>& nums, int x) {
+		nums.push_back(x);
+		shiftUp(nums);
+	}
+
+	void pollHeap(vector<int>& nums) {
+		int oldVal = nums[0]; // 头元素
+		nums[0] = nums[nums.size() - 1];
+		nums.pop_back(); // 弹出末尾
+		shiftDown(nums, 0);
+	}
+};
+
+
+/*
+int main() {
+	vector<int> nums{ 1,4,9,7,2,6,8 };
+	HeapBID h;
+	h.buildMaxHeap(nums);
+	cout << "build heap" << endl;
+	for (auto& a : nums) {
+		cout << a << " ";
+	}
+	cout << endl;
+	cout << "insert" << endl;
+	h.inHeap(nums,5);
+	for (auto& a : nums) {
+		cout << a << " ";
+	}
+
+	cout << endl;
+	cout << "pop " << nums[0] << endl;
+	h.pollHeap(nums);
+	for (auto& a : nums) {
+		cout << a << " ";
+	}
+
+	cout << endl;
+	cout << "pop all" << endl;
+	int n = nums.size();
+	for (int i = 0; i < n; ++i) {
+		cout << nums[0] << " ";
+		h.pollHeap(nums);
+	}
+	return 0;
+}
+*/
+
+// 508. 出现次数最多的子树元素和
+class Solution508 {
+public:
+	unordered_map<int, int> mp; // 保存值出现的次数
+	int ans = 0;
+	vector<int> findFrequentTreeSum(TreeNode* root) {
+		dfs(root);
+		vector<int> rt;
+		for (auto [key, value] : mp) {
+			if (value == ans) {  // 找到出现次数为max的值
+				rt.emplace_back(key);
+			}
+		}
+		return rt;
+	}
+
+	int dfs(TreeNode* root) {  // 求一个节点和其子树和
+		if (root == nullptr) {
+			return 0;
+		}
+		int sum = root->val;
+		sum = sum + dfs(root->left) + dfs(root->right);
+		mp[sum]++;  // 记录一下当前值
+		ans = max(ans, mp[sum]); // 记录目前出现最多次数的值
+		return sum;
+	}
+};
+
+
+// 929. 独特的电子邮件地址
+// 正则表达式
+// ?=   零宽断言
+//  就是一种条件
+int numUniqueEmails(vector<string>& emails) {
+	// 考虑没有+号的情况
+	// (\.)(?=.*@)     去掉@之前的所有.
+	// 考虑有+号的情况
+	// (\+.*)(?=@)  +号之后@之前的所有字符作废
+	// 两种情况求并集
+	regex pattern("(\\.)(?=.*@)|(\\+.*)(?=@)");
+	unordered_set<string> st;
+	for (auto& email : emails) {
+		st.insert(regex_replace(email, pattern, ""));
+	}
+	return st.size();
+}
+
+
+// sscanf 实现字符串的替换
+// 1108. IP 地址无效化
+// #include <stdio.h>
+// int sscanf(const char* str, const char* format, …);
+string defangIPaddr(string address) {
+	int a, b, c, d;
+	sscanf(address.c_str(), "%d.%d.%d.%d", &a, &b, &c, &d);
+	return to_string(a) + "[.]" + to_string(b) + "[.]" + to_string(c) + "[.]" + to_string(d);
+}
+
+
+
+// 线段树解决区间覆盖和删除问题
+// 715. Range 模块
+struct SegTree715 {
+	SegTree715 *left, *right;
+	bool covered;
+	int l, r; // 左右边界
+	SegTree715(int left, int right) :l(left), r(right), covered(false), left(nullptr), right(nullptr) {};
+	SegTree715(int left, int right, bool covered) :l(left), r(right), covered(covered), left(nullptr), right(nullptr) {};
+};
+
+// 半开区间 [left, right)
+class RangeModule {
+public:
+	SegTree715 *sg;
+	RangeModule() { // 初始化数据结构的对象
+		// 初始化线段树区间为数据范围
+		sg = new SegTree715(0, (int)1e9);
+	}
+
+	void addRange(int left, int right) {  // 添加 半开区间 
+		// 添加时若只是部分间断覆盖，那么需要递归进行部分区间更新
+		addNum(sg, left, right);
+	}
+
+	void addNum(SegTree715 *sg, int left, int right) {
+		// 在此线段树中添加新的区间[left,right)
+		if (sg->covered) {  // 当前线段树的区间已经全部被覆盖，那么不需要再更新
+			return;
+		}
+		int l = sg->l, r = sg->r;
+		int mid = l + (r - l) >> 1;  // 二分查找区间
+		if (left <= l && right >= r) {  // 添加的区间可以覆盖当前最大区间，那么可以删除当前区间的所有子树
+			// 因为已经设置了线段树的最大区间，因此不会超过预设区间
+			sg->left = nullptr;
+			sg->right = nullptr;
+			sg->covered = true;
+		}
+		else if(right<=mid) {  // 去更新左侧区间
+			addNum(sg->left, left, right);
+		}
+		else if (left >= mid) { //去更新右侧区间
+			addNum(sg->right, left, right);
+		}
+		else {  // l <= left <= mid <= right <=r
+			// 两侧都需要更新
+			if (sg->left == nullptr) {
+				sg->left = new SegTree715(left, mid, true);
+			}
+			if (sg->right == nullptr) {
+				sg->right = new SegTree715(mid, right, true);
+			}
+			addNum(sg->left, left, mid);
+			addNum(sg->right, mid, right);
+		}
+	}
+
+	bool queryRange(int left, int right) {  // [left,right)全被覆盖的话，返回true，否则false
+		return judgeCover(sg, left, right);
+	}
+
+	bool judgeCover(SegTree715* sg, int left, int right) {
+		// 判断  [left, right) 范围的所有数字是否都被覆盖
+		if (sg == nullptr) {
+			return false; //  边界条件
+		}
+		int l = sg->l, r = sg->r;
+		int mid = l + (r - l) >> 1;
+		// 边界条件
+		if (sg->covered) {
+			return true;
+		}
+		if (right <= mid) {  // 在左侧
+			return judgeCover(sg->left, left, right);
+		}
+		else if (mid <= left) {  // 右侧
+			return judgeCover(sg->right, left, right);
+		}
+		else {  // 两侧
+			return judgeCover(sg->left, left, mid) && judgeCover(sg->right, mid, right);
+		}
+	}
+
+	void removeRange(int left, int right) {  // 删除当前区间
+		removeNum(sg, left, right);
+	}
+
+	void removeNum(SegTree715* sg, int left, int right) {
+		// 注意是删除区间内的所有数字，那么子区间也得删除
+		if (sg == nullptr) {
+			// 没有，那么数字也不存在
+			return;
+		}
+		int l = sg->l, r = sg->r;
+		int mid = l + (r - l) >> 1;
+		if (left <= l && right >= r) {  // 完全覆盖此区间
+			sg->left = nullptr;
+			sg->right = nullptr;
+		}
+		else if (sg->covered) { // 区间所有点都有，直接正常删除
+			if (right <= mid) {  // 在seg的左部分
+				removeNum(sg->left, left, mid);
+			}
+			else if (mid <= left) {  //  右部分
+				removeNum(sg->right, mid, right);
+			}
+			else {
+				// 左右部分都需要删除
+				removeNum(sg->left, left, mid);
+				removeNum(sg->right, mid, right);
+			}
+		}
+		else {  // 线段树内的数字并不是全都存在
+			if (right <= mid) {
+				removeNum(sg->left, left,right);
+			}
+			else if (mid <= left) {
+				removeNum(sg->right, left, right);
+			}
+			else {
+				removeNum(sg->left, left, mid);
+				removeNum(sg->right, mid, right);
+			}
+		}
+		sg->covered = false;
+	}
+};
+
+
+// 241. 为运算表达式设计优先级
+// 分治法
+// 考虑每一个运算符的左右部分，添加括号。如2*3-4*5
+// 添加括号可得    (2) * (3-4*5)  ->   (2)*((3)-(4*5))   ->  (2)*((3)-((4)*(5)))   
+// 其余情况类似，这样一个 完整的式子就可以使用子式子计算求和
+// 为了防止重复，可以加入hash去重
+/*
+class Solution241 {
+public:
+	vector<int> diffWaysToCompute(string expression) {
+		// ****分*****
+		int n = expression.size();
+		for (int i = 0; i < n;++i) {
+			if (a == '+' || a == '-' || a == '*') {
+				string left = expression.substr()
+			}
+		}
+	}
+};*/
+
+//6109. 知道秘密的人数
+// O(N^2)硬推
+class Solution6109 {
+public:
+	int MOD = 1e9 + 7;
+	int peopleAwareOfSecret(int n, int delay, int forget) {
+		vector<long long> vec(n + 1);
+		vec[1] = 1;
+		for (int i = 2; i <= n; ++i) {
+			long long temp = 0;
+			for (int j = max(i - forget + 1, 0); j <= max(i - delay, 0); ++j) {
+				temp = (temp + vec[j] + MOD) % MOD;
+			}
+			vec[i] = temp;
+		}
+		long long ans = 0;
+		for (int i = max(n - forget + 1, 0); i <= n; ++i) {
+			ans = (ans + vec[i] + MOD) % MOD;
+		}
+		return ans;
+	}
+
+	// 6109 前缀和压缩到O(N)
+	// 前缀和的下标很恶心
+	int peopleAwareOfSecret_case2(int n, int delay, int forget) {
+		// 使用前缀和
+		vector<long long> presum(n + 1, 0);
+		// 第一个人
+		presum[1] = 1;
+		for (int i = 2; i <= n; ++i) {
+			int l = max(0, i - forget); //最先忘记的人
+			int r = max(0, i - delay); //最后可以告诉他人的人
+			presum[i] = (presum[i - 1] + presum[r] - presum[l] + MOD) % MOD;
+		}
+		long long ans = (presum[n] - presum[n - forget] + MOD) % MOD;
+		return ans;
+	}
+};
+
+
+
+class Solution6110 {
+public:
+	int MOD = 1e9 + 7;
+	vector<vector<int>> step{ {0,1},{0,-1},{1,0},{-1,0} };
+	vector<vector<long long>> mem;
+	int m, n;
+	long long dfs(vector<vector<int>>& grid, int x, int y) {
+		if (mem[x][y] > 1) {
+			return mem[x][y];
+		}
+		for (int i = 0; i < 4; ++i) {
+			int new_x = x + step[i][0];
+			int new_y = y + step[i][1];
+			if (new_x >= 0 && new_x < m && new_y >= 0 && new_y<n && grid[new_x][new_y]>grid[x][y]) {  // 范围内
+				mem[x][y] = (mem[x][y] + dfs(grid, new_x, new_y) + MOD) % MOD;
+			}
+		}
+		return mem[x][y];
+	}
+
+	int countPaths(vector<vector<int>>& grid) {
+		// 记忆化搜索
+		// 用mem[i][j] 表示到这个点的路径个数
+		m = grid.size();
+		n = grid[0].size();
+		long long ans = 0;
+		mem.resize(m, vector<long long>(n, 1));
+		for (int i = 0; i < m; ++i) {
+			for (int j = 0; j < n; ++j) {
+				ans = (ans + dfs(grid, i, j) + MOD) % MOD;
+			}
+		}
+		return (int)ans;
+	}
+};
+
+
+// 496. 下一个更大元素 I
+class Solution496496 {
+public:
+	vector<int> nextGreaterElement(vector<int>& nums1, vector<int>& nums2) {
+		// 先把nums2中每个数右侧下一个更大元素找出来
+		int n = nums2.size();
+		stack<int> st;
+		unordered_map<int, int> mp;
+		for (int i = n - 1; i >= 0; --i) {
+			while (!st.empty() && st.top() < nums2[i]) {
+				st.pop();
+			}
+			mp[nums2[i]] = st.empty() ? -1 : st.top();
+			st.push(nums2[i]);
+		}
+		vector<int> ans((int)nums1.size(), -1);
+		for (int i = 0; i < (int)nums1.size(); ++i) {
+			ans[i] = mp[nums1[i]];
+		}
+		return ans;
+	}
+};
+
+// 503. 下一个更大元素 II
+class Solution503503 {
+public:
+	vector<int> nextGreaterElements(vector<int>& nums) {
+		// 和 I 一样的解法，不同的是按照数组长度翻倍处理
+		stack<int> st;
+		int n = nums.size();
+		vector<int> ans(n, -1);
+		for (int i = 2 * n - 1; i >= 0; --i) {
+			while (!st.empty() && nums[i % n] >= st.top()) {
+				st.pop();
+			}
+			ans[i % n] = st.empty() ? -1 : st.top();
+			st.push(nums[i % n]);
+		}
+		return ans;
+	}
+};
+
+// 556. 下一个更大元素 III
+class Solution556 {
+public:
+	int nextGreaterElement(int n) {
+		string str = to_string(n);
+		// 从右往左找到第一个不满足从左到右为降序的数字
+		// 然后与它右侧大于它的最小数字交换就行
+		int len = str.size();
+		int fst_min = -1;
+		for (int i = len; i > 0; --i) {
+			if (str[i] > str[i - 1]) {
+				fst_min = i - 1;
+				break;
+			}
+		}
+		if (fst_min < 0) {
+			return -1;
+		}
+		// 记录下来位置，然后找大于它的最小数字
+		int rt_min = fst_min + 1;
+		for (int j = fst_min + 1; j < len; ++j) {
+			if (str[j] > str[fst_min]) {
+				rt_min = str[rt_min] < str[j] ? rt_min : j;
+			}
+		}
+		swap(str[rt_min], str[fst_min]);
+
+		// 把fst_min右侧其余数字升序排列
+		sort(str.begin() + fst_min + 1, str.end());
+		return stoll(str) > INT_MAX ? -1 : stoll(str);
+	}
+};
+
+
+// 729. 我的日程安排表 I
+class MyCalendar729 {
+public:
+	// 区间不能有交叉。set倒着插入，找第一个大于start的right
+	set<pair<int, int>> st;
+	MyCalendar729() {
+	}
+
+	bool book(int start, int end) {
+		auto fnd = st.upper_bound({ start + 1,-1 });
+		if (fnd != st.end()) {
+			// 判断是否有重叠
+			if (end <= fnd->second) {
+				st.insert({ end,start });
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else {  // 没有点的右区间大于start，说明start最大
+			st.insert({ end,start });
+			return true;
+		}
+	}
+};
+
+//735. 行星碰撞
+vector<int> asteroidCollision(vector<int>& asteroids) {
+	// stack
+	stack<int> st;
+	for (size_t i = 0; i < asteroids.size(); ++i) {
+		if (i == 0) {
+			st.push(asteroids[i]);
+			continue;
+		}
+		int tag = asteroids[i] < 0 ? 0 : 1;
+		int tp_tag;
+		if (!st.empty()) {
+			tp_tag = st.top() < 0 ? 0 : 1;
+		}
+		int equ = 0;
+		while (!st.empty() && (tag == 0 && tp_tag == 1) && i < asteroids.size()) {  //  左正右负才炸
+			if (abs(asteroids[i]) > st.top()) {
+				st.pop();
+			}
+			else if (abs(asteroids[i]) == st.top()) {
+				st.pop();
+				equ = 1;
+				break;
+			}
+			else if (abs(asteroids[i]) < st.top()) {
+				equ = 1;
+				break;
+			}
+			if (!st.empty()) {  // 记录一下看看后续能否继续炸
+				tp_tag = st.top() < 0 ? 0 : 1;
+			}
+		}
+		// 不炸
+		if (!equ) {
+			st.push(asteroids[i]);
+		}
+	}
+	vector<int>ans;
+	while (!st.empty()) {
+		ans.emplace_back(st.top());
+		st.pop();
+	}
+	reverse(ans.begin(),ans.end());
+	return ans;
+}
+
+
+
+
+// 二维数组的花式遍历
+// 48.旋转图像
+// 54.矩阵螺旋
+// 59.螺旋矩阵
+
+
+// 749. 隔离病毒
+/*
+	计算最大连通的病毒区域，用不同的常量标记各个区域，使用一个state递减实现
+	已经围过
+*/
+class Solution749 {
+private:
+	const vector<vector<int>> steps{ {-1,0},{1,0},{0,-1},{0,1} };
+	int state = -2;
+	int wall_count;
+	vector<vector<int>> flags;
+	int m, n;
+public:
+	int containVirus(vector<vector<int>>& isInfected) {
+		m = isInfected.size();
+		n = isInfected[0].size();
+		flags.resize(m, vector<int>(n, 0));
+	}
+
+	int find_max_union(vector<vector<int>>& isInfected) {
+		int ans = 0;
+		int curMaxArea = 0;
+		int target_x = 0, target_y = 0;
+		for (int i = 0; i < m; ++i) {
+			for (int j = 0; j < n; ++j) {
+				if (isInfected[i][j] == 1 && flags[i][j] == 0) {
+					wall_count = 0;
+					int temp_area = dfs(isInfected, state, i, j);  // 使用 state 标记区域，以便于统计edge
+					// 为了复用state，--state保证区域的划分
+					if (temp_area > curMaxArea) {
+					
+					}
+				}
+			}
+		}
+	}
+
+	int dfs(vector<vector<int>>& isInfected, int state, int x, int y) {
+		flags[x][y] = 1;
+		int edge_count = 0;
+		for (int i = 0; i < 4; ++i) {
+			int new_x = x + steps[i][0];
+			int new_y = y + steps[i][1];
+			// 负的state表示不同的模块，  0 表示未访问过，1表示访问过
+			if (new_x >= 0 && new_x < m && new_y >= 0 && new_y < n && flags[new_x][new_y]!=1) {
+				// 不是病毒
+				if (isInfected[new_x][new_y] != 1) {
+					// 说明走到了病毒区域的边界，边缘可以统计
+					++wall_count;
+					// 墙的个数和edge的个数不一样，如果在一个左下角空缺的拐角，那么是有一个外围edge模块，但是需要使用两块墙
+					if (flags[new_x][new_y] != state) {
+						flags[new_x][new_y] = state;
+						edge_count++;
+					}
+				}
+				else {  //  是病毒，继续递归
+					edge_count += dfs(isInfected, state, new_x, new_y);
+				}
+
+			}
+		}
+	}
+};
+
+
+
+// 452. 用最少数量的箭引爆气球
+// 一枝箭射气球问题，此时区间交集为1，气球就可以破
+class Solution452 {
+public:
+	int findMinArrowShots(vector<vector<int>>& points) {
+		// 求尽可能多的区间交集
+		if (points.size() == 0) {
+			return 0;
+		}
+		sort(points.begin(), points.end(), [](vector<int>& a, vector<int>& b)->bool {
+			return a[1] < b[1];
+			});
+
+		int ans = 1;
+		int end = points[0][1];
+		for (int i = 1; i < points.size(); ++i) {
+			if (points[i][0] > end) {
+				end = points[i][1];
+				++ans;
+			}
+		}
+		return ans;
+	}
+};
+
+
+
+
+// 757. 设置交集大小至少为2
+// 和射气球问题的区别是，这里的区间交集至少为2，而气球为 1 即可
+// 左右融合区间时，之前的区间如何考虑
+// s不一定连续，小区间满足大区间满足
+// 从大到小融合
+class Solution757 {
+public:
+	int intersectionSizeTwo(vector<vector<int>>& intervals) {
+		// 集合s不连续
+		sort(intervals.begin(), intervals.end(), [](vector<int>& a, vector<int>& b)->bool {
+			return a[0] == b[0] ? a[1] > b[1] : a[0] < b[0];
+			});
+		int ans = 2;
+		int n = intervals.size();
+		int cur = intervals[n - 1][0], next = intervals[n - 1][0] + 1;
+		for (int i = n - 2; i >= 0; --i) {
+			// 下一个区间，左侧肯定<=当前区间左侧，按照排序来说，若右侧大于当前，肯定出现大区间包含小区间的情况，因此不用管
+			if (intervals[i][1] >= next) {
+				continue;
+			}
+			else if (intervals[i][1] < cur) {  // 没重叠
+				ans += 2;
+				cur = intervals[i][0];
+				next = intervals[i][0] + 1;
+			}
+			else if (intervals[i][1] >= cur && intervals[i][1] < next) {   // 部分重叠，如何考虑重叠个数？
+				// 默认重叠一个，ans计数只加1, cur和next怎么动
+				// 取个重叠点，取个新区间的左端点
+				// s不连续！！！
+				next = cur;
+				cur = intervals[i][0];
+				++ans;   // 新区间左端点记个数
+			}
+		}
+		return ans;
+	}
+};
 
 
 
 
 
 
+
+
+
+int main() {
+	vector<int> vec{ 1,-1,-2,-2 };
+	
 	return 0;
 }
 
 
+
+
+	//Solution587 sol;
+	//vector<pair<float, float>> vec{ {0,2},{0,1},{0,0},{1,0},{2,0},{1,1} };
+	//vector<vector<int>> vec{ {1, 1}, { 2, 2 }, { 2, 0 }, { 2, 4 }, { 3, 3 }, { 4, 2 }};
+	//sol.outerTrees(vec);
+	//convexHull(vec);
+
+
+	//string input = "dir\n\tsubdir1\n\t\tfile1.ext\n\t\tsubsubdir1\n\tsubdir2\n\t\tsubsubdir2\n\t\t\tfile2.ext";
+	//lengthLongestPath(input);
+
+	//string str = "I speak Goat Latin";
+	//toGoatLatin(str);
+
+	//vector<int> v{ 5,7,2,4,6,8,9,23,6,8,9,54,4, 5,7,2,4,6,8,9,23,6,8,9,54,4 };
+	//reservoir(v, 8);
 
 	//Solution1036 sol;
 	//vector<vector<int>> blocked{ {10,9},{9,10},{10,11},{11,10} };
